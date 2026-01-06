@@ -220,21 +220,47 @@ export default function GamePage() {
         }
     };
 
+    // GPS Error State
+    const [gpsError, setGpsError] = useState(false);
+
     // 3. GPS Watcher (Standard OS Prompt)
     useEffect(() => {
+        let watchId: number;
+
+        // Timeout to flag simplified error state
+        const timeoutId = setTimeout(() => {
+            if (!userLoc) setGpsError(true);
+        }, 5000);
+
         if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-            const watchId = navigator.geolocation.watchPosition(
+            watchId = navigator.geolocation.watchPosition(
                 (pos) => {
                     setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    setGpsError(false); // Clear error on success
                 },
                 (err) => {
                     console.error('GPS Error:', err);
+                    setGpsError(true);
                 },
                 { enableHighAccuracy: true, maximumAge: 0 }
             );
-            return () => navigator.geolocation.clearWatch(watchId);
         }
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            clearTimeout(timeoutId);
+        };
     }, []);
+
+    const retryGPS = () => {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setGpsError(false);
+            },
+            () => alert('Please enable Location in Browser Settings'),
+            { enableHighAccuracy: true }
+        );
+    };
 
 
 
@@ -255,7 +281,7 @@ export default function GamePage() {
             <div className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-between p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
 
                 {/* TOP BAR */}
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start relative z-50">
                     <button
                         onClick={() => setShowQuitModal(true)}
                         className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-red-500"
@@ -274,6 +300,17 @@ export default function GamePage() {
                         <FileText className="w-5 h-5" />
                     </button>
                 </div>
+
+                {/* GPS WARNING BANNER */}
+                {gpsError && !userLoc && (
+                    <button
+                        onClick={retryGPS}
+                        className="absolute top-24 left-1/2 -translate-x-1/2 pointer-events-auto bg-red-600/90 backdrop-blur text-white px-6 py-3 rounded-full font-black text-xs shadow-[0_0_20px_rgba(220,0,0,0.5)] animate-pulse z-50 border border-white/20 flex items-center gap-2"
+                    >
+                        <Target className="w-4 h-4" />
+                        NO GPS SIGNAL - TAP TO ENABLE
+                    </button>
+                )}
 
                 {/* BOTTOM BAR */}
                 <div className="flex justify-between items-end">
