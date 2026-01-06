@@ -49,6 +49,12 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
             const videos = document.querySelectorAll('body > video');
             videos.forEach(v => {
                 const video = v as HTMLVideoElement;
+
+                // Force iOS compatibility (Critical)
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                video.muted = true;
+
                 // We keep it in the DOM but make it effectively invisible and non-interactive
                 video.style.opacity = '0';
                 video.style.zIndex = '-9999';

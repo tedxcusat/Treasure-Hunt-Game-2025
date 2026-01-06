@@ -220,11 +220,68 @@ export default function GamePage() {
         }
     };
 
+    // 3. Permission Handling
+    const requestPermissions = () => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    // Also start watching
+                    navigator.geolocation.watchPosition(
+                        (p) => setUserLoc({ lat: p.coords.latitude, lng: p.coords.longitude }),
+                        (err) => console.error('GPS Watch Error:', err),
+                        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                    );
+                },
+                (err) => {
+                    alert('GPS ACCESS DENIED. MISSION ABORTED.');
+                    router.push('/');
+                },
+                { enableHighAccuracy: true }
+            );
+        } else {
+            alert('GPS HARDWARE MISSING');
+        }
+    };
+
+    // Auto-start GPS if already granted, otherwise wait for user
+    useEffect(() => {
+        if ('permissions' in navigator) {
+            // @ts-ignore
+            navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+                if (result.state === 'granted') {
+                    requestPermissions();
+                }
+            });
+        }
+    }, []);
+
     if (loadingZone || !currentZone) {
         return (
             <div className="h-full w-full bg-black flex items-center justify-center flex-col gap-4">
                 <div className="w-16 h-16 border-4 border-mission-red border-t-transparent rounded-full animate-spin" />
                 <p className="text-mission-red font-mono animate-pulse">ESTABLISHING SECURE UPLINK...</p>
+            </div>
+        );
+    }
+
+    if (!userLoc) {
+        return (
+            <div className="h-full w-full bg-black flex items-center justify-center flex-col p-8 text-center bg-grid">
+                <div className="mb-8 p-6 rounded-full border-2 border-mission-red bg-mission-red/10 animate-pulseshadow">
+                    <Target className="w-16 h-16 text-mission-red" />
+                </div>
+                <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-widest">SENSOR ACCESS REQUIRED</h2>
+                <p className="text-gray-400 mb-8 max-w-xs mx-auto">
+                    Mission protocols require precise geolocation data.
+                </p>
+                <button
+                    onClick={requestPermissions}
+                    className="btn-press w-full max-w-xs bg-mission-red text-white font-black py-4 rounded-xl shadow-[0_0_20px_rgba(230,0,0,0.4)] tracking-widest flex items-center justify-center gap-3"
+                >
+                    <CheckCircle className="w-5 h-5" />
+                    INITIALIZE SENSORS
+                </button>
             </div>
         );
     }
