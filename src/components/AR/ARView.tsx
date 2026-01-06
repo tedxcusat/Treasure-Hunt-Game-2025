@@ -133,6 +133,7 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                 // @ts-ignore - A-Frame elements are not standard JSX
                 <a-scene
                     vr-mode-ui="enabled: false"
+                    loading-screen="enabled: false"
                     arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
                     renderer="antialias: true; alpha: true; precision: medium;"
                     embedded
