@@ -230,9 +230,9 @@ export default function GamePage() {
     }
 
     return (
-        <div className="relative h-full w-full bg-black overflow-hidden flex flex-col font-sans">
+        <div className="relative h-[100dvh] w-full bg-black overflow-hidden flex flex-col font-sans">
             {/* HUD Layer */}
-            <div className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-between p-6">
+            <div className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-between p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
 
                 {/* TOP BAR */}
                 <div className="flex justify-between items-start">
