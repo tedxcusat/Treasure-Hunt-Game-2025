@@ -54,12 +54,28 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                 video.style.zIndex = '-9999';
                 video.style.position = 'fixed';
                 video.style.pointerEvents = 'none';
-                // Note: We do NOT set display: none or width: 0 because that kills the stream in some browsers
             });
         };
 
         const interval = setInterval(cleanupVideo, 500);
-        return () => clearInterval(interval);
+
+        // CLEANUP ON UNMOUNT: STOP CAMERA
+        return () => {
+            clearInterval(interval);
+            const videos = document.querySelectorAll('video');
+            videos.forEach(v => {
+                const video = v as HTMLVideoElement;
+                // Stop the Stream
+                if (video.srcObject) {
+                    const stream = video.srcObject as MediaStream;
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                    console.log('Camera Stop:', tracks.length, 'tracks stopped');
+                }
+                // Remove from DOM
+                video.remove();
+            });
+        };
     }, []);
 
     return (
