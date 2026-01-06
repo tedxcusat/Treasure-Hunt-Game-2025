@@ -158,6 +158,23 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                     INITIALIZING OPTICS...
                 </div>
             )}
+
+            {/* CAMERA PERMISSION FALLBACK */}
+            {/* If the background is black for too long, user sees this */}
+            <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${scriptsLoaded ? 'z-50' : 'hidden'}`}>
+                {/* We use a simple CSS animation delay to show this button only if camera takes too long (3s) */}
+                <button
+                    onClick={() => {
+                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                            .then(() => window.location.reload()) // Reload to let AR.js attach to the fresh permission
+                            .catch(e => alert("Camera blocked: " + e.message));
+                    }}
+                    className="pointer-events-auto bg-mission-red text-white px-6 py-4 rounded-xl font-black tracking-widest uppercase shadow-2xl animate-in fade-in fill-mode-forwards opacity-0 duration-1000 delay-[4000ms]"
+                    style={{ animationDelay: '4s' }}
+                >
+                    Enable Camera
+                </button>
+            </div>
         </div>
     );
 }

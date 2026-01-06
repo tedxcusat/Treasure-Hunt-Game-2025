@@ -46,14 +46,14 @@ export default function StoryPage() {
     };
 
     return (
-        <div className="relative h-full min-h-screen flex flex-col items-center justify-center p-8 bg-white overflow-hidden font-sans">
+        <div className="relative h-[100dvh] w-full flex flex-col items-center justify-center p-4 bg-white overflow-hidden font-sans pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
             {/* Background Effects */}
             <div className="bg-grid absolute inset-0 z-0 pointer-events-none opacity-30" />
             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white to-transparent z-10" />
             <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white to-transparent z-10" />
 
-            {/* Global Red Border */}
-            <div className="absolute inset-0 pointer-events-none border-[3px] border-mission-red rounded-[2rem] z-40 m-1" />
+            {/* Global Red Border - Safe Area Inset */}
+            <div className="absolute inset-4 pointer-events-none border-[3px] border-mission-red rounded-[2rem] z-40 shadow-[0_0_30px_rgba(255,0,0,0.1)]" />
 
             <div className="relative z-20 w-full max-w-sm flex flex-col h-full justify-center min-h-[60vh]">
 
