@@ -32,6 +32,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet" />
+      </head>
       <body
         className={`${spaceGrotesk.variable} ${orbitron.variable} antialiased bg-zinc-900 text-foreground min-h-screen flex items-center justify-center`}
       >

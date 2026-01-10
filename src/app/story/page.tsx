@@ -118,7 +118,7 @@ export default function StoryPage() {
                                                 {idx + 1}
                                             </motion.div>
 
-                                            {isActive && idx !== STORY_PAGES.length - 1 && (
+                                            {isActive && (
                                                 <motion.div
                                                     layoutId="stepper-line"
                                                     className="flex-1 h-[1px] bg-zinc-300 mx-2 min-w-[20px]"
@@ -205,8 +205,8 @@ export default function StoryPage() {
                             <h1 className="text-4xl font-black uppercase font-orbitron tracking-tighter leading-none text-black mb-1">
                                 YOUR CLUE
                             </h1>
-                            <p className="text-sm font-medium text-mission-red italic lowercase tracking-wider font-clash">
-                                *decoded data*
+                            <p className="text-sm font-bold text-mission-red lowercase tracking-wider font-clash">
+                                decoded data
                             </p>
                         </div>
 
