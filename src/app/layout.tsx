@@ -1,9 +1,14 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk } from 'next/font/google';
+import { Space_Grotesk, Orbitron } from 'next/font/google';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
+  subsets: ['latin'],
+});
+
+const orbitron = Orbitron({
+  variable: '--font-orbitron',
   subsets: ['latin'],
 });
 
@@ -28,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceGrotesk.variable} antialiased bg-zinc-900 text-foreground min-h-screen flex items-center justify-center`}
+        className={`${spaceGrotesk.variable} ${orbitron.variable} antialiased bg-zinc-900 text-foreground min-h-screen flex items-center justify-center`}
       >
         {/* Desktop Background Elements */}
         <div className="fixed inset-0 z-0 opacity-50 pointer-events-none hidden md:block">

@@ -68,34 +68,33 @@ export default function Home() {
   };
 
   return (
-    <div className="relative h-full flex flex-col items-center justify-center p-6 text-center bg-white">
-      {/* Background Grid */}
-      <div className="bg-grid absolute inset-0 z-0 pointer-events-none" />
+    <div className="relative h-full flex flex-col items-center justify-center p-6 text-center bg-white text-black font-clash">
 
-      {/* Red Viewfinder Corners */}
-      <div className="absolute top-6 left-6 w-8 h-8 border-t-4 border-l-4 border-mission-red rounded-tl-lg" />
-      <div className="absolute top-6 right-6 w-8 h-8 border-t-4 border-r-4 border-mission-red rounded-tr-lg" />
-      <div className="absolute bottom-6 left-6 w-8 h-8 border-b-4 border-l-4 border-mission-red rounded-bl-lg" />
-      <div className="absolute bottom-6 right-6 w-8 h-8 border-b-4 border-r-4 border-mission-red rounded-br-lg" />
+      {/* Content Container */}
+      <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center gap-10">
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-xs">
+        {/* Logo Section */}
+        <div className="flex flex-col items-center gap-4">
+          {/* Grey Placeholder Square */}
+          <div className="w-28 h-28 bg-gray-200" />
 
-        {/* Logo Area */}
-        <div className="mb-12">
-          <div className="w-20 h-20 mx-auto bg-mission-red/10 rounded-full flex items-center justify-center border-2 border-mission-red mb-4 shadow-lg shadow-red-100">
-            <Shield className="w-10 h-10 text-mission-red" />
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tight mb-2">GEOQUEST</h1>
-          <div className="inline-block bg-black text-white px-3 py-1 rounded-full text-xs font-bold tracking-widest">
-            MISSION ACCESS
+          <div className="text-center mt-2">
+            <h1 className="text-[2.5rem] font-black tracking-tighter font-orbitron leading-none">
+              <span className="text-black">GEO</span>
+              <span className="text-mission-red">QUEST</span>
+            </h1>
+            <p className="text-2xl font-clash text-black font-normal mt-1 tracking-tight">
+              Mission Access
+            </p>
           </div>
         </div>
 
         {/* Input Card */}
-        <div className="bg-white border-2 border-gray-100 shadow-xl rounded-2xl p-6 mb-8 transform transition-all hover:scale-[1.02]">
-          <p className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest text-left">Security Code</p>
-          <div className="flex justify-between gap-2">
+        <div className="w-full bg-white border border-gray-400 rounded-[30px] p-6 pb-10 shadow-sm relative">
+          <label className="block text-[10px] font-bold text-black mb-6 uppercase tracking-[0.2em] font-orbitron text-center">
+            SECURITY CODE
+          </label>
+          <div className="flex justify-between items-center px-1">
             {[0, 1, 2, 3].map((idx) => (
               <input
                 key={idx}
@@ -105,32 +104,33 @@ export default function Home() {
                 onChange={(e) => handleCodeChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 maxLength={1}
-                className="w-12 h-14 text-center text-2xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-mission-red focus:bg-white focus:outline-none transition-all text-black shadow-inner"
+                className="w-14 h-14 rounded-full border border-black text-center text-2xl font-bold font-orbitron focus:border-mission-red focus:border-2 focus:outline-none transition-all text-black bg-transparent p-0"
                 placeholder=""
                 inputMode="numeric"
+                autoComplete="off"
               />
             ))}
           </div>
         </div>
 
-        {/* Gamified Button */}
-        <button
-          onClick={handleInitiate}
-          disabled={loading}
-          className="btn-press w-full group relative overflow-hidden rounded-2xl bg-mission-red p-4 shadow-lg shadow-red-500/30 transition-all hover:bg-red-600 active:scale-95 mb-6"
-        >
-          <div className="relative z-10 flex items-center justify-center gap-3 font-bold text-white text-lg tracking-wide">
-            {loading ? 'SYNCING...' : 'INITIATE MISSION'}
-            {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
-          </div>
-          {/* Shine Effect */}
-          <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-0" />
-        </button>
+        {/* Bottom Section */}
+        <div className="w-full space-y-6 mt-2">
+          <button
+            onClick={handleInitiate}
+            disabled={loading}
+            className="w-full bg-mission-red text-white h-16 rounded-full font-clash text-xl uppercase font-medium flex items-center justify-center gap-3 hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-500/20"
+          >
+            {loading ? 'VERIFYING...' : (
+              <>
+                INITIATE MISSION <ArrowRight className="w-6 h-6 stroke-[1.5]" />
+              </>
+            )}
+          </button>
 
-        {/* Bottom Helper */}
-        <p className="text-xs text-gray-400 font-medium">
-          Don't have a squad? <button onClick={() => router.push('/register')} className="text-mission-red font-bold hover:underline">Register Here</button>
-        </p>
+          <p className="text-base font-clash text-black">
+            Don't have a squad? <button onClick={() => router.push('/register')} className="text-mission-red font-semibold hover:underline">Register here</button>
+          </p>
+        </div>
 
       </div>
     </div>

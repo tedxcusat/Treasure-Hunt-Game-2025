@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, RotateCcw, Play, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useAnimation, LayoutGroup } from 'framer-motion';
+import { Lightbulb, ChevronRight, ArrowRight } from 'lucide-react';
 
 const STORY_PAGES = [
     {
@@ -28,185 +28,220 @@ const STORY_PAGES = [
     }
 ];
 
+const LongArrowRight = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 64 16" fill="none" className={className}>
+        <path d="M0 8H62M62 8L54 1M62 8L54 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const LongArrowLeft = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 64 16" fill="none" className={className}>
+        <path d="M64 8H2M2 8L10 1M2 8L10 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const SwipeButton = ({ onComplete }: { onComplete: () => void }) => {
+    const [dragged, setDragged] = useState(false);
+    const x = useMotionValue(0);
+    const controls = useAnimation();
+
+    const handleDragEnd = async (_: any, info: any) => {
+        if (info.offset.x > 150) {
+            setDragged(true);
+            onComplete();
+        } else {
+            controls.start({ x: 0 });
+        }
+    };
+
+    return (
+        <div className="relative w-full h-16 bg-[#FFC0CB] rounded-full flex items-center p-1.5 border-[4px] border-[#4A0404] overflow-hidden">
+            <motion.div className="absolute inset-0 flex items-center justify-center text-black font-bold tracking-widest text-sm font-clash uppercase pointer-events-none z-0 pl-8">
+                SWIPE TO START GAME
+            </motion.div>
+            <motion.div
+                drag="x"
+                dragConstraints={{ left: 0, right: 200 }}
+                dragElastic={0.1}
+                dragMomentum={false}
+                onDragEnd={handleDragEnd}
+                animate={controls}
+                className="w-12 h-12 bg-[#D00000] rounded-full flex items-center justify-center z-10 cursor-grab active:cursor-grabbing shadow-sm"
+            >
+                <ArrowRight className="w-6 h-6 text-white stroke-[2.5]" />
+            </motion.div>
+        </div>
+    );
+};
+
 export default function StoryPage() {
     const router = useRouter();
     const [pageIndex, setPageIndex] = useState(0);
     const isLastPage = pageIndex === STORY_PAGES.length;
 
     const handleNext = () => {
-        setPageIndex(prev => prev + 1);
+        if (pageIndex < STORY_PAGES.length) {
+            setPageIndex(prev => prev + 1);
+        }
     };
 
-    const handleRestart = () => {
-        setPageIndex(0);
-    };
-
-    const handleStartGame = () => {
-        router.push('/game');
+    const handleBack = () => {
+        if (pageIndex > 0) setPageIndex(prev => prev - 1);
     };
 
     return (
-        <div className="relative h-[100dvh] w-full flex flex-col items-center justify-center p-4 bg-white overflow-hidden font-sans pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-            {/* Background Effects */}
-            <div className="bg-grid absolute inset-0 z-0 pointer-events-none opacity-30" />
-            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white to-transparent z-10" />
-            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white to-transparent z-10" />
+        <div className="flex flex-col h-[100dvh] w-full bg-white text-black font-clash overflow-hidden">
+            {/* Header */}
+            <header className="flex items-center justify-center p-6 pt-12">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase font-orbitron tracking-[0.3em]">TEDXCUSAT - 2026</span>
+            </header>
 
-            {/* Global Red Border - Safe Area Inset */}
-            <div className="absolute inset-4 pointer-events-none border-[3px] border-mission-red rounded-[2rem] z-40 shadow-[0_0_30px_rgba(255,0,0,0.1)]" />
+            {!isLastPage ? (
+                <>
+                    {/* Stepper Area */}
+                    <div className="px-6 mt-4 mb-8 w-full">
+                        <LayoutGroup>
+                            <div className="flex items-center w-full gap-1">
+                                {STORY_PAGES.map((_, idx) => {
+                                    const isActive = idx === pageIndex;
+                                    const isPast = idx < pageIndex;
 
-            <div className="relative z-20 w-full max-w-sm flex flex-col h-full justify-center min-h-[60vh]">
+                                    return (
+                                        <div key={idx} className="contents">
+                                            <motion.div
+                                                layout
+                                                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                className={`rounded-full flex items-center justify-center text-sm font-bold font-orbitron z-10
+                                                ${isActive ? 'w-9 h-9 bg-mission-red text-white shadow-lg shadow-red-500/30' :
+                                                        isPast ? 'w-8 h-8 bg-zinc-600 text-zinc-300' : 'w-8 h-8 bg-zinc-400 text-white'}`}
+                                            >
+                                                {idx + 1}
+                                            </motion.div>
 
-                <AnimatePresence mode="wait">
-                    {!isLastPage ? (
-                        <motion.div
-                            key={pageIndex}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="flex flex-col gap-8"
-                        >
-                            {/* Header / Sequence Indicator */}
-                            <motion.div
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="flex items-center gap-3"
-                            >
-                                <div className="h-px w-12 bg-mission-red" />
-                                <span className="text-xs font-black tracking-[0.2em] text-mission-red uppercase">
-                                    Sequence 0{pageIndex + 1} / 0{STORY_PAGES.length}
-                                </span>
-                            </motion.div>
+                                            {isActive && idx !== STORY_PAGES.length - 1 && (
+                                                <motion.div
+                                                    layoutId="stepper-line"
+                                                    className="flex-1 h-[1px] bg-zinc-300 mx-2 min-w-[20px]"
+                                                    initial={false}
+                                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })}
 
-                            {/* Title with Glitch/Reveal Effect */}
-                            <motion.h1
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.3, type: "spring" }}
-                                className="text-5xl font-black text-black uppercase leading-[0.85] tracking-tighter"
-                            >
-                                {STORY_PAGES[pageIndex].title}
-                            </motion.h1>
-
-                            {/* Typewriter Body Text */}
-                            <div className="min-h-[120px]">
-                                <motion.p
-                                    key={pageIndex}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.5, duration: 0.8 }}
-                                    className="text-xl font-medium text-gray-800 leading-relaxed font-mono"
-                                >
-                                    {STORY_PAGES[pageIndex].text.split("").map((char, i) => (
-                                        <motion.span
-                                            key={i}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: 0.5 + (i * 0.02) }}
-                                        >
-                                            {char}
-                                        </motion.span>
-                                    ))}
-                                </motion.p>
+                                {/* Bulb Icon */}
+                                <motion.div layout className="text-zinc-400 ml-auto pl-2">
+                                    <Lightbulb className="w-6 h-6 stroke-[1.5]" />
+                                </motion.div>
                             </div>
+                        </LayoutGroup>
+                    </div>
 
-                            {/* Custom 'Next' Interaction */}
-                            <motion.button
-                                onClick={handleNext}
-                                whileHover={{ scale: 1.05, x: 10 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="mt-12 group flex items-center gap-4 self-start"
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col px-6 relative justify-center">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={pageIndex}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.4, ease: "circOut" }}
+                                className="space-y-6"
                             >
-                                <div className="w-16 h-16 rounded-full border-2 border-black flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
-                                    <ArrowRight className="w-6 h-6" />
-                                </div>
-                                <span className="font-black tracking-widest text-sm uppercase group-hover:underline decoration-2 underline-offset-4">
-                                    Proceed
-                                </span>
-                            </motion.button>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="final"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.8 }}
-                            className="w-full h-full flex flex-col items-center justify-center p-4 text-center"
+                                <h1 className="text-[2.75rem] font-black uppercase font-orbitron tracking-tighter leading-[0.9] text-black">
+                                    {STORY_PAGES[pageIndex].title}
+                                </h1>
+                                <p className="text-xl leading-relaxed text-zinc-800 font-medium font-clash tracking-wide max-w-sm">
+                                    {STORY_PAGES[pageIndex].text}
+                                </p>
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Footer Navigation */}
+                    <div className="px-8 pb-12 pt-4 flex items-center justify-between mt-auto w-full">
+                        <button
+                            onClick={handleBack}
+                            disabled={pageIndex === 0}
+                            className={`flex flex-col items-center gap-2 group transition-opacity ${pageIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                         >
-                            {/* Header - Floating */}
-                            <motion.div
-                                initial={{ y: -20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="mb-8"
-                            >
-                                <div className="text-[10px] font-bold text-gray-400 tracking-[0.5em] uppercase mb-2">Decrypted Data</div>
-                                <h2 className="text-4xl font-black text-mission-red uppercase tracking-tighter scale-y-110">
-                                    YOUR CLUE
-                                </h2>
-                            </motion.div>
+                            <LongArrowLeft className="w-16 h-4 text-black group-hover:-translate-x-2 transition-transform" />
+                            <span className="text-[10px] font-bold uppercase font-clash text-zinc-500 tracking-[0.2em] group-hover:text-black">back</span>
+                        </button>
 
-                            {/* Text Content - Minimalist with Decorative Lines */}
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="relative py-8 px-4"
-                            >
-                                {/* Decorative "Brackets" */}
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-mission-red/20" />
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-mission-red/20" />
-
-                                <div className="max-h-[50vh] overflow-y-auto hide-scrollbar">
-                                    <p className="font-medium text-gray-800 text-sm leading-8 whitespace-pre-line font-mono selection:bg-mission-red/20">
-                                        Seek the realm where <span className="font-black text-mission-red">young minds thrive</span>,<br />
-                                        In <span className="font-black text-mission-red">Cusat's bounds</span>, knowledge comes alive.<br /><br />
-
-                                        A place of wonders, where <span className="font-black text-mission-red">science is king</span>,<br />
-                                        Where <span className="font-black text-mission-red">labs and parks</span> make learning sing.<br /><br />
-
-                                        Look for the key where <span className="font-black text-mission-red">space's secrets unfold</span>,<br />
-                                        Amongst <span className="font-black text-mission-red">statues tall</span> and models bold.<br /><br />
-
-                                        The treasure's hidden, <span className="font-black text-mission-red">close at hand</span>,<br />
-                                        <span className="font-black text-mission-red">Solve the puzzle</span>, fulfill your plan.<br /><br />
-
-                                        Let <span className="font-black text-mission-red">curiosity</span> be your guide,<br />
-                                        To find the prize, let <span className="font-black text-mission-red">wisdom</span> be your stride.<br /><br />
-
-                                        Where students play and <span className="font-black text-mission-red">knowledge gleams</span>,<br />
-                                        <span className="font-black text-mission-red">Unlock the secret</span>, fulfill your dreams.
-                                    </p>
+                        <button
+                            onClick={handleNext}
+                            className="flex flex-col items-center gap-2 group"
+                        >
+                            <LongArrowRight className="w-16 h-4 text-black group-hover:translate-x-2 transition-transform" />
+                            <span className="text-[10px] font-bold uppercase font-clash text-zinc-500 tracking-[0.2em] group-hover:text-black">
+                                next
+                            </span>
+                        </button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    {/* FINAL PAGE - CLUE & START */}
+                    {/* Stepper Area (Completed) */}
+                    <div className="px-6 mt-4 mb-4 w-full">
+                        <div className="flex items-center w-full gap-1">
+                            {STORY_PAGES.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold font-orbitron bg-zinc-700 text-white opacity-60"
+                                >
+                                    {idx + 1}
                                 </div>
-                            </motion.div>
+                            ))}
+                            <div className="flex-1 h-[1px] bg-zinc-300 mx-2 opacity-60" />
+                            <Lightbulb className="w-6 h-6 text-mission-red fill-mission-red ml-auto" />
+                        </div>
+                    </div>
 
-                            {/* Buttons */}
-                            <motion.div
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.6 }}
-                                className="mt-8 w-full max-w-xs space-y-4"
-                            >
-                                <button
-                                    onClick={handleStartGame}
-                                    className="group w-full bg-black text-white text-lg font-black py-5 rounded-full shadow-xl shadow-red-500/10 flex items-center justify-center gap-2 hover:bg-mission-red transition-all active:scale-95"
-                                >
-                                    <span>START GAME</span>
-                                    <Play className="w-4 h-4 fill-current group-hover:translate-x-1 transition-transform" />
-                                </button>
+                    <div className="flex-1 flex flex-col px-6 relative mt-4 overflow-hidden">
+                        <div className="shrink-0 mb-6">
+                            <h1 className="text-4xl font-black uppercase font-orbitron tracking-tighter leading-none text-black mb-1">
+                                YOUR CLUE
+                            </h1>
+                            <p className="text-sm font-medium text-mission-red italic lowercase tracking-wider font-clash">
+                                *decoded data*
+                            </p>
+                        </div>
 
-                                <button
-                                    onClick={handleRestart}
-                                    className="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest transition-colors"
-                                >
-                                    Read Story Again
+                        {/* Scrollable Text Area */}
+                        <div className="flex-1 overflow-y-auto pr-2 pb-4 scrollbar-hide mask-fade-bottom">
+                            <p className="text-lg leading-loose text-zinc-800 font-clash font-normal">
+                                Seek the realm where <span className="font-bold text-black">young minds thrive</span>,
+                                In <span className="font-bold text-black">Cusat's bounds</span>, knowledge comes alive.<br /><br />
+
+                                A place of wonders, where <span className="font-bold text-black">science is king</span>,
+                                Where <span className="font-bold text-black">labs and parks</span> make learning sing.<br /><br />
+
+                                Look for the key where <span className="font-bold text-black">space's secrets unfold</span>,
+                                Amongst <span className="font-bold text-black">statues tall</span> and models bold.<br /><br />
+
+                                The treasure's hidden, <span className="font-bold text-black">close at hand</span>,
+                                Solve the puzzle, fulfill your plan.<br /><br />
+
+                                Let <span className="font-bold text-black">curiosity</span> be your guide,
+                                To find the prize, let wisdom be your stride.
+                            </p>
+                        </div>
+
+                        {/* Swipe to Start */}
+                        <div className="mt-6 mb-8 shrink-0">
+                            <SwipeButton onComplete={() => router.push('/game')} />
+                            <div className="text-center mt-6">
+                                <button onClick={() => setPageIndex(0)} className="text-[13px] text-zinc-800 font-medium border-b border-zinc-800 pb-0.5 font-clash tracking-wide">
+                                    Go back to the story ?
                                 </button>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

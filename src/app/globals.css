@@ -1,3 +1,4 @@
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -15,6 +16,8 @@
   --color-mission-red: var(--mission-red);
   --color-mission-light: var(--mission-light);
   --font-sans: var(--font-space-grotesk);
+  --font-orbitron: var(--font-orbitron);
+  --font-clash: 'Clash Display', sans-serif;
 }
 
 body {
