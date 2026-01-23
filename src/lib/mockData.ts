@@ -5,8 +5,8 @@ export const MOCK_ZONES = [
     {
         id: 1,
         name: 'TedX Origin',
-        lat: 12.9716,
-        lng: 77.5946,
+        lat: 10.044809728469327,
+        lng: 76.32519885554734,
         code: DUMMY_CODE,
         question: "What year was the first TEDx event held at this campus?",
         answer: "2015",

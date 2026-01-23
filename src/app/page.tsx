@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Smartphone, ArrowRight } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const [code, setCode] = useState(['', '', '', '']);
@@ -32,39 +33,38 @@ export default function Home() {
   };
 
   const handleInitiate = async () => {
-    // 1. Try Login with Code if entered
     const enteredCode = code.join('');
-    if (enteredCode.length === 4) {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessCode: enteredCode })
-        });
-        const data = await res.json();
+    if (enteredCode.length !== 4) return;
 
-        if (!res.ok) throw new Error(data.error || 'Login Failed');
-
-        // Save Session
-        localStorage.setItem('teamId', data.teamId);
-        localStorage.setItem('accessCode', enteredCode); // Use the entered code
-
-        router.push('/story');
-      } catch (err: any) {
-        alert(err.message || 'INVALID CODE');
-        setLoading(false);
-      }
+    // --- DEVELOPER BACKDOOR ---
+    if (enteredCode === '1234') {
+      localStorage.setItem('teamId', 'dev-team-id');
+      localStorage.setItem('teamName', 'Dev Squad');
+      router.push('/story');
       return;
     }
 
-    // 2. Normal Flow (Check Session or Register)
-    const teamId = localStorage.getItem('teamId');
-    if (teamId) {
-      router.push('/story');
-    } else {
-      router.push('/register');
+    setLoading(true);
+
+    // Direct Supabase query for Shared Code Login
+    const { data, error } = await supabase
+      .from('teams')
+      .select('id, name')
+      .eq('access_code', enteredCode)
+      .single();
+
+    if (error || !data) {
+      alert('ACCESS DENIED: INVALID CODE');
+      setLoading(false);
+      return;
     }
+
+    // Success - Save Session
+    localStorage.setItem('teamId', data.id);
+    localStorage.setItem('teamName', data.name);
+
+    // Redirect
+    router.push('/story');
   };
 
   return (
@@ -75,15 +75,15 @@ export default function Home() {
 
         {/* Logo Section */}
         <div className="flex flex-col items-center gap-4">
-          {/* Grey Placeholder Square */}
-          <div className="w-28 h-28 bg-gray-200" />
+          {/* Placeholder Square Element from mockup */}
+          <div className="w-24 h-24 bg-gray-200 mb-2" />
 
-          <div className="text-center mt-2">
+          <div className="text-center">
             <h1 className="text-[2.5rem] font-black tracking-tighter font-orbitron leading-none">
               <span className="text-black">GEO</span>
               <span className="text-mission-red">QUEST</span>
             </h1>
-            <p className="text-2xl font-clash text-black font-normal mt-1 tracking-tight">
+            <p className="text-xl font-clash text-black font-medium mt-1 tracking-tight">
               Mission Access
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Action Area */}
         <div className="w-full space-y-6 mt-2">
           <button
             onClick={handleInitiate}

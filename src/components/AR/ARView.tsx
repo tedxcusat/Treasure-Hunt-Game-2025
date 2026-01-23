@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import Script from 'next/script';
@@ -25,9 +24,9 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
         // Custom click handler for A-Frame entities
         if (typeof window !== 'undefined') {
             // Register a-frame component to handle clicks if not exists
-            // @ts-ignore
+            // @ts-expect-error - AFRAME is loaded globally via script
             if (window.AFRAME && !window.AFRAME.components['click-handler']) {
-                // @ts-ignore
+                // @ts-expect-error - AFRAME is loaded globally via script
                 window.AFRAME.registerComponent('click-handler', {
                     init: function () {
                         this.el.addEventListener('click', () => {
@@ -76,7 +75,6 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                     const stream = video.srcObject as MediaStream;
                     const tracks = stream.getTracks();
                     tracks.forEach(track => track.stop());
-                    console.log('Camera Stop:', tracks.length, 'tracks stopped');
                 }
                 // Remove from DOM
                 video.remove();
@@ -119,7 +117,7 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                 src="https://aframe.io/releases/1.3.0/aframe.min.js"
                 strategy="afterInteractive"
                 onLoad={() => {
-                    console.log('A-Frame loaded');
+                    // Script loaded
                 }}
             />
             {/* Using the standard build for Location Based AR */}
@@ -135,7 +133,7 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                     vr-mode-ui="enabled: false"
                     loading-screen="enabled: false"
                     arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
-                    renderer="antialias: true; alpha: true; precision: medium;"
+                    renderer="antialias: true; alpha: true; precision: medium; preserveDrawingBuffer: true;"
                     embedded
                     className="z-10 w-full h-full block"
                 >

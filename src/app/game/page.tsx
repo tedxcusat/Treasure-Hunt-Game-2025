@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle } from 'lucide-react';
+import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw } from 'lucide-react';
 
 // Dynamically import Map to prevent SSR issues with Leaflet
 const GameMap = dynamic(() => import('@/components/Map/GameMap'), {
@@ -61,6 +61,56 @@ export default function GamePage() {
 
     // Global GPS State (Hoisted for speed)
     const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
+    const handleCapture = () => {
+        const canvas = document.querySelector('canvas.a-canvas') as HTMLCanvasElement;
+        const video = document.querySelector('video') as HTMLVideoElement;
+
+        if (canvas && video) {
+            // Create a temporary canvas for composition
+            const composite = document.createElement('canvas');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            composite.width = width;
+            composite.height = height;
+
+            const ctx = composite.getContext('2d');
+            if (!ctx) return;
+
+            // 1. Draw Camera Feed (Video)
+            // Note: We assume the video and canvas are aligned. 
+            // In some AR.js modes, video is larger (to cover). We simply draw it to fill.
+            ctx.drawImage(video, 0, 0, width, height);
+
+            // 2. Draw AR Content (Canvas)
+            ctx.drawImage(canvas, 0, 0, width, height);
+
+            // 3. Save
+            const dataUrl = composite.toDataURL('image/png');
+            setCapturedImage(dataUrl);
+
+            // Optional: Play shutter sound or haptic here
+            if (navigator.vibrate) navigator.vibrate(50);
+        } else if (canvas) {
+            // Fallback if video not found (e.g. desktop debug)
+            setCapturedImage(canvas.toDataURL('image/png'));
+        } else {
+            alert('CAMERA SYSTEM OBSCURED');
+        }
+    };
+
+    const downloadImage = () => {
+        if (!capturedImage) return;
+        const link = document.createElement('a');
+        link.href = capturedImage;
+        link.download = `mission-capture-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     // 1. Initial Load & Auth Check
     useEffect(() => {
@@ -312,10 +362,9 @@ export default function GamePage() {
                     </button>
                 )}
 
-                {/* BOTTOM BAR */}
-                <div className="flex justify-between items-end">
-                    {/* ZONE INDICATOR */}
-                    <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-end relative z-[60] w-full pointer-events-none">
+                    {/* ZONE INDICATOR (Left) - Hide in AR or specific style */}
+                    <div className={`flex flex-col gap-1 transition-opacity duration-300 ${viewMode === 'AR' ? 'opacity-50 scale-90 origin-bottom-left' : 'opacity-100'}`}>
                         <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Clearance</div>
                         <div className="bg-black/90 border-l-4 border-mission-red px-4 py-2 skew-x-[-10deg] ml-2 backdrop-blur-md">
                             <div className="skew-x-[10deg] flex items-baseline gap-2">
@@ -325,21 +374,21 @@ export default function GamePage() {
                         </div>
                     </div>
 
-                    {/* SWITCH VIEW (Right) */}
-                    <div className="flex flex-col items-center gap-2">
+                    {/* SWITCH VIEW / CAMERA CONTROLS (Right/Center) */}
+                    <div className="flex flex-col items-center gap-2 pointer-events-auto">
                         {viewMode === 'MAP' && (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                className="flex flex-col items-center gap-2"
+                                className="flex flex-col items-center gap-2 mr-4 mb-4"
                             >
                                 <motion.button
                                     onClick={() => setViewMode('AR')}
                                     whileHover="hover"
                                     whileTap="tap"
                                     initial="idle"
-                                    className="pointer-events-auto w-20 h-20 relative flex items-center justify-center focus:outline-none"
+                                    className="w-20 h-20 relative flex items-center justify-center focus:outline-none"
                                 >
                                     {/* Outer Ripple Ring */}
                                     <motion.div
@@ -374,55 +423,62 @@ export default function GamePage() {
                                 </motion.button>
                             </motion.div>
                         )}
-                        {viewMode === 'AR' && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="flex flex-col items-center gap-2"
-                            >
-                                <motion.button
-                                    onClick={() => setViewMode('MAP')}
-                                    whileHover="hover"
-                                    whileTap="tap"
-                                    initial="idle"
-                                    className="pointer-events-auto w-20 h-20 relative flex items-center justify-center focus:outline-none"
-                                >
-                                    {/* Outer Ripple Ring (Red Theme) */}
-                                    <motion.div
-                                        variants={{
-                                            idle: { scale: 1, opacity: 0.2 },
-                                            hover: { scale: 1.2, opacity: 0.4 },
-                                            tap: { scale: 0.9, opacity: 0.6 }
-                                        }}
-                                        transition={{ duration: 0.4 }}
-                                        className="absolute inset-0 bg-mission-red/20 rounded-full border border-mission-red/50"
-                                    />
-
-                                    {/* Main Button Body (Red Map) */}
-                                    <motion.div
-                                        variants={{
-                                            idle: { scale: 1 },
-                                            hover: { scale: 1.05 },
-                                            tap: { scale: 0.95 }
-                                        }}
-                                        className="relative w-16 h-16 bg-mission-red rounded-full flex items-center justify-center border-4 border-white/20 shadow-[0_0_20px_rgba(220,38,38,0.6)] z-10"
-                                    >
-                                        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/20 to-transparent pointer-events-none" />
-                                        <MapIcon className="w-7 h-7 text-white drop-shadow-md" />
-                                    </motion.div>
-
-                                    {/* Rotating Reticle Ring */}
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                                        className="absolute inset-1 border-[1px] border-dashed border-white/30 rounded-full z-0"
-                                    />
-                                </motion.button>
-                            </motion.div>
-                        )}
                     </div>
                 </div>
+
+                {/* AR SPECIFIC OVERLAY (Absolute Full Screen) */}
+                <AnimatePresence>
+                    {viewMode === 'AR' && (
+                        <>
+                            {/* TOP LEFT CLOSE BUTTON */}
+                            <motion.button
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                onClick={() => setViewMode('MAP')}
+                                className="absolute top-24 left-6 pointer-events-auto z-[70] w-12 h-12 bg-black/60 backdrop-blur-md rounded-full border border-white/20 flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
+                            >
+                                <X className="w-6 h-6" />
+                            </motion.button>
+
+                            {/* CENTER RETICLE */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 1.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center"
+                            >
+                                <div className="w-64 h-64 border border-white/20 rounded-lg relative">
+                                    <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/60" />
+                                    <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/60" />
+                                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/60" />
+                                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/60" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-1 h-1 bg-white/50 rounded-full" />
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* BOTTOM CENTER SHUTTER BUTTON */}
+                            <div className="absolute bottom-12 left-0 right-0 z-[70] flex justify-center pointer-events-none">
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.5, y: 50 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.5, y: 50 }}
+                                    onClick={handleCapture}
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="pointer-events-auto w-24 h-24 relative flex items-center justify-center focus:outline-none"
+                                >
+                                    <div className="absolute inset-0 bg-white/10 rounded-full border border-white/30 animate-pulse" />
+                                    <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center border-4 border-gray-200 shadow-[0_0_30px_rgba(255,255,255,0.3)] z-10 transition-colors hover:bg-gray-100">
+                                        <div className="w-18 h-18 rounded-full border-2 border-dashed border-gray-400 opacity-50" />
+                                    </div>
+                                </motion.button>
+                            </div>
+                        </>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Main View Area */}
@@ -531,6 +587,66 @@ export default function GamePage() {
                     </div>
                 </div>
             )}
+
+            {/* IMAGE PREVIEW OVERLAY (Full Screen) */}
+            <AnimatePresence>
+                {capturedImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-[200] bg-black flex flex-col pointer-events-auto"
+                    >
+                        {/* Image Container */}
+                        <div className="relative flex-1 w-full h-full">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={capturedImage}
+                                alt="Captured"
+                                className="w-full h-full object-contain bg-black"
+                            />
+
+                            {/* Top Gradient Overlay */}
+                            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
+
+                            {/* Bottom Gradient Overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+                        </div>
+
+                        {/* TOP CONTROLS */}
+                        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-[210]">
+                            <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                                <span className="text-white/90 font-mono text-xs tracking-widest uppercase">CAPTURED_IMG_001.PNG</span>
+                            </div>
+                            <button
+                                onClick={() => setCapturedImage(null)}
+                                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 active:scale-90 transition-transform hover:bg-white/10"
+                            >
+                                <X className="w-5 h-5 text-white" />
+                            </button>
+                        </div>
+
+                        {/* BOTTOM CONTROLS */}
+                        <div className="absolute bottom-0 left-0 right-0 p-8 pb-12 flex justify-between items-center z-[210] gap-6">
+                            <button
+                                onClick={() => setCapturedImage(null)}
+                                className="flex-1 py-4 bg-gray-800/80 backdrop-blur-md text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-700 active:scale-95 transition-all w-1/3"
+                            >
+                                <RefreshCw className="w-5 h-5" />
+                                <span className="uppercase tracking-wider text-sm">Retake</span>
+                            </button>
+
+                            <button
+                                onClick={downloadImage}
+                                className="flex-1 py-4 bg-mission-red text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 active:scale-95 transition-all w-2/3 border border-white/10"
+                            >
+                                <Download className="w-5 h-5" />
+                                <span className="uppercase tracking-wider text-sm">Save to Comm</span>
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Global Red Border Overlay - Tuned for rounded corners */}
             <div className="absolute inset-0 pointer-events-none border-[3px] border-mission-red rounded-[2rem] z-40 m-1" />
