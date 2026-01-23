@@ -38,7 +38,7 @@ export async function GET(request: Request) {
                     name: zone.name,
                     lat: zone.lat,
                     lng: zone.lng,
-                    clues: zone.clues,
+                    clue: zone.clue,
                     question: zone.question,
                     options: zone.options
                 }
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
                 name: zone.name,
                 lat: zone.lat,
                 lng: zone.lng,
-                clues: zone.clues, // JSON array
+                clue: zone.clues ? zone.clues[0] : "No clue available",
                 question: zone.question,
                 options: zone.options // JSON array
                 // CODE IS HIDDEN

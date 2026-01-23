@@ -162,9 +162,18 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                 {/* We use a simple CSS animation delay to show this button only if camera takes too long (3s) */}
                 <button
                     onClick={() => {
+                        // Critical Check: Is API available? (Fails on HTTP non-localhost)
+                        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                            alert("Camera API not found. You might be on HTTP. Please use HTTPS.");
+                            return;
+                        }
+
                         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
                             .then(() => window.location.reload()) // Reload to let AR.js attach to the fresh permission
-                            .catch(e => alert("Camera blocked: " + e.message));
+                            .catch(e => {
+                                console.error("Cam Error:", e);
+                                alert("Camera blocked: " + e.message + ". Check Site Settings.");
+                            });
                     }}
                     className="pointer-events-auto bg-mission-red text-white px-6 py-4 rounded-xl font-black tracking-widest uppercase shadow-2xl animate-in fade-in fill-mode-forwards opacity-0 duration-1000 delay-[4000ms]"
                     style={{ animationDelay: '4s' }}

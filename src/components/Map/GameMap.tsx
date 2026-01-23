@@ -173,28 +173,45 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
         return () => clearTimeout(timer);
     }, [userLoc, jitteredTarget]);
 
-    // Dynamic User Icon
+    // Dynamic User Icon ("The Detective's Torch")
     const userIcon = L.divIcon({
         className: 'bg-transparent',
-        html: `<div class="relative flex items-center justify-center w-[120px] h-[120px] pointer-events-none">
-                <!-- Rotating Arrow Container -->
+        html: `<div class="relative flex items-center justify-center w-[160px] h-[160px] pointer-events-none">
+                <!-- Pulsing "Sonar" Ring -->
+                <div class="absolute w-4 h-4 bg-cyan-400 rounded-full animate-ping opacity-75"></div>
+                
+                <!-- Rotating Container -->
                 <div style="transform: rotate(${heading}deg); transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);" class="relative w-full h-full flex items-center justify-center z-20">
-                     <!-- Arrow Shape -->
-                     <div class="relative -top-2">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 5L35 35L20 28L5 35L20 5Z" fill="#DC2626" stroke="white" stroke-width="2"/>
-                        </svg>
-                     </div>
+                     <!-- Flashlight Beam (Gradient Cone) -->
+                     <svg width="160" height="160" viewBox="0 0 160 160" class="absolute top-0 left-0 overflow-visible opacity-80">
+                        <defs>
+                            <linearGradient id="beam-grad" x1="0.5" y1="1" x2="0.5" y2="0">
+                                <stop offset="0%" stop-color="rgba(34, 211, 238, 0)" />
+                                <stop offset="20%" stop-color="rgba(34, 211, 238, 0.3)" />
+                                <stop offset="100%" stop-color="rgba(34, 211, 238, 0)" />
+                            </linearGradient>
+                             <filter id="cyan-glow">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- The Beam -->
+                        <path d="M80 80 L50 20 A 40 40 0 0 1 110 20 Z" fill="url(#beam-grad)" />
+                        
+                        <!-- Sharp Directional Arrow -->
+                        <path d="M80 75 L75 85 L80 82 L85 85 Z" fill="#22D3EE" filter="url(#cyan-glow)" />
+                    </svg>
                 </div>
                 
-                <!-- Proximity Ring (Fixed - Does not rotate) -->
-                <div class="absolute w-[80px] h-[80px] rounded-full border border-mission-red/50 bg-mission-red/5 shadow-[0_0_15px_rgba(220,38,38,0.15)] z-10"></div>
-                
-                <!-- Subtle Pulse for "Live" feel -->
-                <div class="absolute w-[80px] h-[80px] rounded-full border border-mission-red/30 animate-pulse opacity-50 z-0"></div>
+                <!-- Core Dot (Static) -->
+                <div class="absolute w-3 h-3 bg-cyan-400 border-2 border-white rounded-full shadow-[0_0_10px_#22d3ee] z-30"></div>
                </div>`,
-        iconSize: [120, 120], // Large container for ring
-        iconAnchor: [60, 60], // Center exactly
+        iconSize: [160, 160],
+        iconAnchor: [80, 80],
     });
 
     if (!userLoc) return <div className="flex h-full items-center justify-center text-mission-red animate-pulse">ACQUIRING GPS SIGNAL...</div>;
@@ -202,61 +219,71 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
     return (
         <div className="relative h-full w-full overflow-hidden bg-black">
             {/* HUD Elements */}
-            <MapContainer
-                center={[userLoc.lat, userLoc.lng]}
-                zoom={18}
-                minZoom={16}
-                maxZoom={20}
-                style={{ height: '100%', width: '100%', background: '#000000' }}
-                zoomControl={false}
-                attributionControl={false}
-                className="z-0"
+
+            {/* ROTATING MAP CONTAINER (Course-Up) */}
+            <div
+                className="absolute top-1/2 left-1/2 origin-center transition-transform duration-200 ease-linear will-change-transform"
+                style={{
+                    width: '150vmax',
+                    height: '150vmax',
+                    transform: `translate(-50%, -50%) rotate(${-heading}deg)`
+                }}
             >
-                <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    maxNativeZoom={18}
-                />
+                <MapContainer
+                    center={[userLoc.lat, userLoc.lng]}
+                    zoom={18}
+                    minZoom={16}
+                    maxZoom={20}
+                    style={{ height: '100%', width: '100%', background: '#000000' }}
+                    zoomControl={false}
+                    attributionControl={false}
+                    className="z-0"
+                >
+                    <TileLayer
+                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                        maxNativeZoom={18}
+                    />
 
-                <Marker position={[userLoc.lat, userLoc.lng]} icon={userIcon}>
-                    {/* No Popup for user, just icon */}
-                </Marker>
+                    <Marker position={[userLoc.lat, userLoc.lng]} icon={userIcon}>
+                        {/* No Popup for user, just icon */}
+                    </Marker>
 
-                <MapController coords={userLoc} />
+                    <MapController coords={userLoc} />
 
-                {/* Navigation Route (Computed Path) */}
-                {jitteredTarget && displayPath.length > 0 && (
-                    <>
-                        {/* Route: Brighter "Neon" Effect */}
-                        {/* Outer Glow (Vivid Red) */}
-                        <Polyline
-                            positions={displayPath}
-                            pathOptions={{
-                                color: '#FF0000', // Pure Red
-                                weight: 8,
-                                opacity: 0.6,
-                                lineCap: 'round',
-                                lineJoin: 'round',
-                                className: 'drop-shadow-[0_0_15px_rgba(255,0,0,0.6)]' // Enhanced Glow
-                            }}
-                        />
-                        {/* Inner Core (White/Pinkish for contrast) */}
-                        <Polyline
-                            positions={displayPath}
-                            pathOptions={{
-                                color: '#FF4444', // Bright Lighter Red
-                                weight: 3,
-                                opacity: 1,
-                                lineCap: 'round',
-                                lineJoin: 'round'
-                            }}
-                        />
+                    {/* Navigation Route (Computed Path) */}
+                    {jitteredTarget && displayPath.length > 0 && (
+                        <>
+                            {/* Route: Brighter "Neon" Effect */}
+                            {/* Outer Glow (Vivid Red) */}
+                            <Polyline
+                                positions={displayPath}
+                                pathOptions={{
+                                    color: '#FF0000', // Pure Red
+                                    weight: 8,
+                                    opacity: 0.6,
+                                    lineCap: 'round',
+                                    lineJoin: 'round',
+                                    className: 'drop-shadow-[0_0_15px_rgba(255,0,0,0.6)]' // Enhanced Glow
+                                }}
+                            />
+                            {/* Inner Core (White/Pinkish for contrast) */}
+                            <Polyline
+                                positions={displayPath}
+                                pathOptions={{
+                                    color: '#FF4444', // Bright Lighter Red
+                                    weight: 3,
+                                    opacity: 1,
+                                    lineCap: 'round',
+                                    lineJoin: 'round'
+                                }}
+                            />
 
-                        {/* High-Detail Target Zone Marker (SVG Optimized & Bright) */}
-                        <Marker
-                            position={[jitteredTarget.lat, jitteredTarget.lng]}
-                            icon={L.divIcon({
-                                className: 'bg-transparent',
-                                html: `<div class="relative flex items-center justify-center w-[160px] h-[160px] pointer-events-none">
+                            {/* High-Detail Target Zone Marker (SVG Optimized & Bright) */}
+                            <Marker
+                                position={[jitteredTarget.lat, jitteredTarget.lng]}
+                                icon={L.divIcon({
+                                    className: 'bg-transparent',
+                                    html: `<div class="relative flex items-center justify-center w-[160px] h-[160px] pointer-events-none">
                                         <!-- SVG Container for Smooth Animation -->
                                         <svg width="160" height="160" viewBox="0 0 160 160" class="absolute inset-0">
                                             <defs>
@@ -299,13 +326,14 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                                         <div class="w-2 h-2 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,1)] z-10"></div>
                                         <div class="absolute w-full h-full border border-red-500/40 rounded-full scale-50 animate-ping"></div>
                                        </div>`,
-                                iconSize: [160, 160],
-                                iconAnchor: [80, 80]
-                            })}
-                        />
-                    </>
-                )}
-            </MapContainer>
+                                    iconSize: [160, 160],
+                                    iconAnchor: [80, 80]
+                                })}
+                            />
+                        </>
+                    )}
+                </MapContainer>
+            </div>
         </div>
     );
 }

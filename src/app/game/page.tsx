@@ -18,18 +18,19 @@ const ARView = dynamic(() => import('@/components/AR/ARView'), {
     loading: () => <div className="h-full w-full flex items-center justify-center text-mission-red animate-pulse">INITIALIZING OPTICS...</div>
 });
 
-const ZONE_DURATION = 30; // Seconds
+const ZONE_DURATION = 1800; // 30 Minutes
 
 interface Zone {
     id: number;
     name: string;
     lat: number;
     lng: number;
-    clues: string[];
+    clue: string;
     question: string;
     options: string[];
     radius_meters?: number;
 }
+
 
 export default function GamePage() {
     const router = useRouter();
@@ -195,15 +196,11 @@ export default function GamePage() {
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} s`;
     };
 
     // Clue Logic
-    const getClueTier = () => {
-        if (timeLeft > 15) return 0;
-        if (timeLeft > 5) return 1;
-        return 2;
-    };
+    // Interaction Handlers
 
     // Interaction Handlers
     const handleModelClick = useCallback(() => {
@@ -496,7 +493,7 @@ export default function GamePage() {
                     <div className="w-full max-w-xs bg-white rounded-[2rem] p-6 text-center shadow-2xl border-4 border-mission-red relative pointer-events-auto">
                         <h3 className="text-mission-red font-black text-lg uppercase tracking-wider mb-6">CURRENT CLUE</h3>
                         <p className="text-gray-800 font-bold text-lg mb-8 leading-relaxed">
-                            {currentZone.clues[getClueTier()] || currentZone.clues[0]}
+                            {currentZone.clue}
                         </p>
                         <div className="h-px bg-gray-200 w-full mb-6" />
                         <p className="text-[10px] font-bold text-gray-400 uppercase mb-4">FIND THE LOCATION</p>
