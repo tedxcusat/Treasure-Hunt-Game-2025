@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { Compass } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useSound } from '@/hooks/useSound';
 
 // Fix for default Leaflet icons in Next.js
 const iconUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png';
@@ -21,28 +23,41 @@ interface GameMapProps {
 
 interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
     webkitCompassHeading?: number;
+    requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
-function MapController({ coords }: { coords: { lat: number, lng: number } }) {
+function MapController({ coords, zoom }: { coords: { lat: number, lng: number }, zoom: number }) {
     const map = useMap();
     useEffect(() => {
-        map.flyTo([coords.lat, coords.lng], map.getZoom());
-    }, [coords, map]);
+        map.setView([coords.lat, coords.lng], zoom, { animate: true });
+        map.invalidateSize(); // Force redraw to prevent grey/black tiles
+    }, [coords, zoom, map]);
     return null;
 }
 
+// Helper: Haversine Distance (in meters)
+const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371e3; // Earth radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+};
+
 export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
-    // Memoize jittered target to avoid useEffect state updates
-    // Use useState lazy initializer to ensure randomness only happens once per target change (if we key by target, but here we just want it once per mount or we use useEffect)
-    // Actually, simple useState with effect is better if target changes.
-    // Let's use useMemo but with a seed? No.
-    // React docs suggest: data generation should happen in effects or event handlers, not during render.
-    // So let's revert to useEffect but use a ref to check if changed?
-    // Or just use `useMemo` is fine if we accept it's not strictly pure? No, React 18 strict mode double invokes.
-    // Best: useState for the offset.
-
+    const { playSound } = useSound();
     const [jitteredTarget, setJitteredTarget] = useState<{ lat: number; lng: number } | null>(null);
+    const [zoomLevel, setZoomLevel] = useState(17);
+    // Adjusted: 15 (Wide) / 18 (Close). Avoid 19+ as it causes tile loading issues on some devices.
 
+    // ... jitter effect ...
     useEffect(() => {
         if (!targetLocation) {
             setJitteredTarget(null);
@@ -56,7 +71,91 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
         });
     }, [targetLocation]);
 
+
     const [heading, setHeading] = useState(0);
+    const [permissionGranted, setPermissionGranted] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
+            // Safe cast to iOS-specific type using helper interface
+            const DeviceOrientationEventIOS = DeviceOrientationEvent as unknown as {
+                requestPermission?: () => Promise<'granted' | 'denied'>;
+            };
+
+            // Check if permission is needed (iOS 13+)
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (typeof DeviceOrientationEventIOS.requestPermission === 'function') {
+                setPermissionGranted(false);
+            } else {
+                setPermissionGranted(true);
+            }
+        }
+    }, []);
+
+
+
+    const requestCompassPermission = () => {
+        // Safe cast to iOS-specific type
+        const DeviceOrientationEventIOS = DeviceOrientationEvent as unknown as {
+            requestPermission?: () => Promise<'granted' | 'denied'>;
+        };
+
+        if (typeof DeviceOrientationEventIOS.requestPermission === 'function') {
+            DeviceOrientationEventIOS.requestPermission()
+                .then((response) => {
+                    if (response === 'granted') {
+                        setPermissionGranted(true);
+                    } else {
+                        alert('Permission denied');
+                    }
+                })
+                .catch(console.error);
+        }
+    };
+
+    // Compass Logic
+    // Compass Logic
+    useEffect(() => {
+        if (!permissionGranted) return;
+
+        const handleOrientation = (e: DeviceOrientationEvent) => {
+            const castedE = e as DeviceOrientationEventiOS;
+
+            // Priority 1: iOS
+            if (castedE.webkitCompassHeading) {
+                setHeading(castedE.webkitCompassHeading);
+                return;
+            }
+
+            // Priority 3: Standard Fallback (if Absolute not supported)
+            if (!('ondeviceorientationabsolute' in window) && e.alpha) {
+                setHeading(360 - e.alpha);
+            }
+        };
+
+        const handleAbsoluteOrientation = (e: DeviceOrientationEvent) => {
+            // Priority 2: Chrome Android Absolute
+            if (e.alpha) {
+                setHeading(360 - e.alpha);
+            }
+        };
+
+        // iOS & Standard
+        window.addEventListener('deviceorientation', handleOrientation);
+
+        // Chrome Android (Absolute)
+        if ('ondeviceorientationabsolute' in window) {
+            window.addEventListener('deviceorientationabsolute', handleAbsoluteOrientation);
+        }
+
+        return () => {
+            window.removeEventListener('deviceorientation', handleOrientation);
+            if ('ondeviceorientationabsolute' in window) {
+                window.removeEventListener('deviceorientationabsolute', handleAbsoluteOrientation);
+            }
+        };
+    }, [permissionGranted]);
+
     const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
     // Ref to hold current routePath for useEffect reading without dependency loop
@@ -65,40 +164,9 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
         routePathRef.current = routePath;
     }, [routePath]);
 
-    // Compass Logic
-    useEffect(() => {
-        const handleOrientation = (e: DeviceOrientationEvent) => {
-            const castedE = e as DeviceOrientationEventiOS;
-            if (castedE.webkitCompassHeading) {
-                // iOS
-                setHeading(castedE.webkitCompassHeading);
-            } else if (e.alpha) {
-                // Android / Standard (Approximate)
-                setHeading(360 - e.alpha);
-            }
-        };
-
-        window.addEventListener('deviceorientation', handleOrientation);
-        return () => window.removeEventListener('deviceorientation', handleOrientation);
-    }, []);
-
     const lastFetchedLoc = useRef<{ lat: number; lng: number } | null>(null);
 
-    // Helper: Haversine Distance (in meters)
-    const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-        const R = 6371e3; // Earth radius in meters
-        const φ1 = lat1 * Math.PI / 180;
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lng2 - lng1) * Math.PI / 180;
 
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
-    };
 
     // Responsive Route Trimming (Memoized for atomic updates)
     // Runs synchronously during render -> No flicker/lag
@@ -218,9 +286,55 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-black">
+            {/* Compass Permission Button (If needed) */}
+            {!permissionGranted && (
+                <button
+                    onClick={requestCompassPermission}
+                    className="absolute top-4 left-4 z-[400] bg-black/80 text-mission-red border border-mission-red/50 px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md font-mono text-xs font-bold animate-pulse pointer-events-auto"
+                >
+                    <Compass className="w-4 h-4" />
+                    ENABLE COMPASS
+                </button>
+            )}
+
             {/* HUD Elements */}
 
             {/* ROTATING MAP CONTAINER (Course-Up) */}
+
+            {/* ZOOM CONTROLS (HUD - Static) */}
+            {/* ZOOM CONTROL (HUD - Static) - SINGLE TOGGLE */}
+            <div className="absolute right-4 bottom-32 z-50 pointer-events-auto">
+                <button
+                    onClick={() => {
+                        playSound('scope');
+                        // Toggle between 15 (Wide) and 18 (Close)
+                        setZoomLevel(prev => prev === 15 ? 18 : 15);
+                    }}
+                    className="relative w-16 h-16 flex items-center justify-center group focus:outline-none active:scale-95 transition-transform duration-200"
+                >
+                    {/* Scope Container - Always Active Style */}
+                    <div className="absolute inset-0 rounded-full border-2 border-mission-red bg-black/80 shadow-[0_0_15px_rgba(220,38,38,0.6)]">
+
+                        {/* Crosshair Ticks (SVG) */}
+                        <svg className="absolute inset-0 w-full h-full p-1" viewBox="0 0 100 100">
+                            {/* Top Tick */}
+                            <line x1="50" y1="0" x2="50" y2="15" stroke="#EF4444" strokeWidth="8" />
+                            {/* Bottom Tick */}
+                            <line x1="50" y1="100" x2="50" y2="85" stroke="#EF4444" strokeWidth="8" />
+                            {/* Left Tick */}
+                            <line x1="0" y1="50" x2="15" y2="50" stroke="#EF4444" strokeWidth="8" />
+                            {/* Right Tick */}
+                            <line x1="100" y1="50" x2="85" y2="50" stroke="#EF4444" strokeWidth="8" />
+                        </svg>
+                    </div>
+
+                    {/* Text Label - Shows Current Level */}
+                    <span className="relative z-10 font-black font-mono text-[10px] text-white tracking-tighter">
+                        {zoomLevel === 15 ? 'WIDE' : 'ZOOM'}
+                    </span>
+                </button>
+            </div>
+
             <div
                 className="absolute top-1/2 left-1/2 origin-center transition-transform duration-200 ease-linear will-change-transform"
                 style={{
@@ -248,7 +362,7 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                         {/* No Popup for user, just icon */}
                     </Marker>
 
-                    <MapController coords={userLoc} />
+                    <MapController coords={userLoc} zoom={zoomLevel} />
 
                     {/* Navigation Route (Computed Path) */}
                     {jitteredTarget && displayPath.length > 0 && (

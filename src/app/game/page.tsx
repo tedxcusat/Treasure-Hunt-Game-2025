@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw } from 'lucide-react';
+import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw, BookOpen } from 'lucide-react';
+import { STORY_PAGES } from '@/lib/storyData';
 
 // Dynamically import Map to prevent SSR issues with Leaflet
 const GameMap = dynamic(() => import('@/components/Map/GameMap'), {
@@ -32,8 +33,11 @@ interface Zone {
 }
 
 
+import { useSound } from '@/hooks/useSound';
+
 export default function GamePage() {
     const router = useRouter();
+    const { playSound } = useSound();
     const [viewMode, setViewMode] = useState<'MAP' | 'AR'>('MAP');
     const [teamId, setTeamId] = useState<string | null>(null);
 
@@ -53,6 +57,7 @@ export default function GamePage() {
     // Game Flow State
     const [showChallenge, setShowChallenge] = useState(false); // Code Entry
     const [showLore, setShowLore] = useState(false); // Lore Question
+    const [showStoryModal, setShowStoryModal] = useState(false); // Story Board
     const [inputCode, setInputCode] = useState('');
     const [challengeStatus, setChallengeStatus] = useState<'IDLE' | 'CHECKING' | 'SUCCESS' | 'ERROR'>('IDLE');
 
@@ -327,25 +332,42 @@ export default function GamePage() {
             {/* HUD Layer */}
             <div className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-between p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
 
-                {/* TOP BAR */}
-                <div className="flex justify-between items-start relative z-50">
+                <div className="flex justify-between items-start relative z-50 gap-2">
                     <button
-                        onClick={() => setShowQuitModal(true)}
+                        onClick={() => {
+                            playSound('click');
+                            setShowQuitModal(true);
+                        }}
                         className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-red-500"
                     >
                         <Power className="w-5 h-5" />
                     </button>
 
-                    <div className={`px-6 py-2 bg-black/80 border border-white/20 rounded-full flex items-center gap-2 text-white font-mono text-xl backdrop-blur-md shadow-lg ${timeLeft <= 5 ? 'text-red-500 border-red-500 animate-pulse' : ''}`}>
+                    <div className={`px-6 py-2 bg-black/80 border border-mission-red rounded-full flex items-center gap-2 text-white font-mono text-xl backdrop-blur-md shadow-lg ${timeLeft <= 5 ? 'text-red-500 border-red-500 animate-pulse' : ''}`}>
                         {formatTime(timeLeft)}
                     </div>
 
-                    <button
-                        onClick={() => setShowClueModal(true)}
-                        className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-yellow-400"
-                    >
-                        <FileText className="w-5 h-5" />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                playSound('click');
+                                setShowStoryModal(true);
+                            }}
+                            className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-blue-400"
+                        >
+                            <BookOpen className="w-5 h-5" />
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                playSound('click');
+                                setShowClueModal(true);
+                            }}
+                            className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-yellow-400"
+                        >
+                            <FileText className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* GPS WARNING BANNER */}
@@ -381,7 +403,10 @@ export default function GamePage() {
                                 className="flex flex-col items-center gap-2 mr-4 mb-4"
                             >
                                 <motion.button
-                                    onClick={() => setViewMode('AR')}
+                                    onClick={() => {
+                                        playSound('click');
+                                        setViewMode('AR');
+                                    }}
                                     whileHover="hover"
                                     whileTap="tap"
                                     initial="idle"
@@ -578,8 +603,59 @@ export default function GamePage() {
                         <h3 className="text-2xl font-black text-black mb-2 uppercase">ABORT MISSION?</h3>
                         <p className="text-sm text-gray-500 mb-8 font-medium">Progress will be lost.</p>
                         <div className="space-y-3">
-                            <button onClick={() => router.push('/quit')} className="w-full py-4 font-black text-white bg-mission-red rounded-xl shadow-lg active:scale-95">YES, QUIT</button>
-                            <button onClick={() => setShowQuitModal(false)} className="w-full py-4 font-bold text-gray-600 bg-gray-100 rounded-xl">CANCEL</button>
+                            <button onClick={() => { playSound('click'); router.push('/quit'); }} className="w-full py-4 font-black text-white bg-mission-red rounded-xl shadow-lg active:scale-95">YES, QUIT</button>
+                            <button onClick={() => { playSound('click'); setShowQuitModal(false); }} className="w-full py-4 font-bold text-gray-600 bg-gray-100 rounded-xl">CANCEL</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* STORY BOARD MODAL */}
+            {showStoryModal && (
+                <div className="absolute inset-0 z-[100] bg-black/95 flex items-center justify-center p-6 backdrop-blur-md">
+                    <div className="w-full max-w-md bg-black border-2 border-mission-red/50 shadow-[0_0_50px_rgba(220,38,38,0.5)] rounded-[2rem] overflow-hidden relative pointer-events-auto h-[75vh] flex flex-col">
+
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-mission-red/20 to-transparent border-b border-mission-red/30 p-5 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-3 text-mission-red">
+                                <BookOpen className="w-6 h-6 animate-pulse" />
+                                <span className="font-black font-orbitron uppercase tracking-[0.2em] text-sm text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">MISSION ARCHIVE</span>
+                            </div>
+                            <button onClick={() => setShowStoryModal(false)} className="bg-black/50 border border-white/10 p-2 rounded-full hover:bg-mission-red hover:border-mission-red group transition-all duration-300">
+                                <X className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                            </button>
+                        </div>
+
+                        {/* Content Scroll */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-12 scrollbar-hide">
+                            {STORY_PAGES.map((page, idx) => (
+                                <div key={idx} className="relative pl-6 border-l border-dashed border-white/20 group">
+                                    {/* Animated Timeline Node */}
+                                    <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 bg-black border border-mission-red rounded-full group-hover:bg-mission-red group-hover:shadow-[0_0_10px_#ef4444] transition-all duration-500" />
+
+                                    <h4 className="text-mission-red font-bold uppercase text-[10px] tracking-[0.3em] mb-2 font-mono opacity-80">
+                                        // LOG_ENTRY_0{idx + 1}
+                                    </h4>
+                                    <h3 className="text-2xl font-black text-white mb-3 uppercase font-orbitron tracking-tighter leading-none">
+                                        {page.title}
+                                    </h3>
+                                    <p className="text-sm text-gray-400 font-medium leading-relaxed font-mono tracking-wide border-l-2 border-transparent group-hover:border-mission-red/50 pl-0 group-hover:pl-4 transition-all duration-300">
+                                        {/* eslint-disable-next-line react/no-unescaped-entities */}
+                                        {page.text}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 bg-black border-t border-white/10 shrink-0 text-center relative overflow-hidden">
+                            <div className="absolute inset-0 bg-repeat opacity-5" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'6\' height=\'6\' viewBox=\'0 0 6 6\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M5 0h1v1H5zM0 5h1v1H0z\'/%3E%3C/g%3E%3C/svg%3E")' }} />
+                            <button
+                                onClick={() => setShowStoryModal(false)}
+                                className="relative w-full py-4 bg-white/5 border border-white/10 text-white font-black uppercase tracking-[0.3em] rounded-xl active:scale-95 transition-all text-xs hover:bg-mission-red hover:border-mission-red hover:shadow-[0_0_30px_rgba(220,38,38,0.4)]"
+                            >
+                                CLOSE ARCHIVE
+                            </button>
                         </div>
                     </div>
                 </div>

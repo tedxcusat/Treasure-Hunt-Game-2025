@@ -4,6 +4,14 @@
 import Script from 'next/script';
 import { useEffect, useState, memo } from 'react';
 
+// Extend Window interface for AFRAME
+declare global {
+    interface Window {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        AFRAME: any;
+    }
+}
+
 interface ARViewProps {
     targetLocation: { lat: number; lng: number };
     modelUrl: string; // e.g., "/3dAssets/x.glb"
@@ -15,7 +23,6 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
 
     useEffect(() => {
         // Instant check: If A-Frame is already in window (re-entry), skip loading state
-        // @ts-ignore
         if (typeof window !== 'undefined' && window.AFRAME) {
             setScriptsLoaded(true);
         }
@@ -25,9 +32,7 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
         // Custom click handler for A-Frame entities
         if (typeof window !== 'undefined') {
             // Register a-frame component to handle clicks if not exists
-            // @ts-expect-error - AFRAME is loaded globally via script
             if (window.AFRAME && !window.AFRAME.components['click-handler']) {
-                // @ts-expect-error - AFRAME is loaded globally via script
                 window.AFRAME.registerComponent('click-handler', {
                     init: function () {
                         this.el.addEventListener('click', () => {
@@ -114,6 +119,25 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                 }
             `}</style>
 
+            {/* Suppress AR.js default alerts (Location permission instructions) */}
+            <Script id="suppress-ar-alert" strategy="afterInteractive">
+                {`
+                    (function() {
+                        const originalAlert = window.alert;
+                        window.alert = function(message) {
+                            if (typeof message === 'string' && (
+                                message.includes('activate geolocation') || 
+                                message.includes('camera permission')
+                            )) {
+                                console.log('Suppressed AR.js Alert:', message);
+                                return;
+                            }
+                            originalAlert(message);
+                        };
+                    })();
+                `}
+            </Script>
+
             <Script
                 src="https://aframe.io/releases/1.3.0/aframe.min.js"
                 strategy="afterInteractive"
@@ -130,6 +154,7 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
 
             {scriptsLoaded ? (
                 // A-Frame elements are not standard JSX
+                // @ts-ignore - A-Frame types are not picking up from global.d.ts despite best efforts
                 <a-scene
                     vr-mode-ui="enabled: false"
                     loading-screen="enabled: false"
@@ -139,9 +164,11 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                     className="z-10 w-full h-full block"
                 >
                     {/* Camera with GPS - using basics for compatibility */}
+                    {/* @ts-ignore */}
                     <a-camera gps-camera rotation-reader></a-camera>
 
                     {/* glTF Model at GPS Location */}
+                    {/* @ts-ignore */}
                     <a-entity
                         gltf-model={modelUrl}
                         scale="1 1 1"
