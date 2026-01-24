@@ -244,22 +244,22 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
     // Dynamic User Icon ("The Detective's Torch")
     const userIcon = L.divIcon({
         className: 'bg-transparent',
-        html: `<div class="relative flex items-center justify-center w-[160px] h-[160px] pointer-events-none">
+        html: `<div class="relative flex items-center justify-center w-[200px] h-[200px] pointer-events-none">
                 <!-- Pulsing "Sonar" Ring -->
-                <div class="absolute w-4 h-4 bg-cyan-400 rounded-full animate-ping opacity-75"></div>
+                <div class="absolute w-4 h-4 bg-yellow-400 rounded-full animate-ping opacity-75"></div>
                 
                 <!-- Rotating Container -->
                 <div style="transform: rotate(${heading}deg); transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);" class="relative w-full h-full flex items-center justify-center z-20">
                      <!-- Flashlight Beam (Gradient Cone) -->
-                     <svg width="160" height="160" viewBox="0 0 160 160" class="absolute top-0 left-0 overflow-visible opacity-80">
+                     <svg width="200" height="200" viewBox="0 0 200 200" class="absolute top-0 left-0 overflow-visible opacity-90">
                         <defs>
                             <linearGradient id="beam-grad" x1="0.5" y1="1" x2="0.5" y2="0">
-                                <stop offset="0%" stop-color="rgba(34, 211, 238, 0)" />
-                                <stop offset="20%" stop-color="rgba(34, 211, 238, 0.3)" />
-                                <stop offset="100%" stop-color="rgba(34, 211, 238, 0)" />
+                                <stop offset="0%" stop-color="rgba(250, 204, 21, 0)" />
+                                <stop offset="20%" stop-color="rgba(250, 204, 21, 0.4)" />
+                                <stop offset="100%" stop-color="rgba(250, 204, 21, 0)" />
                             </linearGradient>
-                             <filter id="cyan-glow">
-                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                             <filter id="yellow-glow">
+                                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
                                 <feMerge>
                                     <feMergeNode in="coloredBlur"/>
                                     <feMergeNode in="SourceGraphic"/>
@@ -267,20 +267,70 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                             </filter>
                         </defs>
                         
-                        <!-- The Beam -->
-                        <path d="M80 80 L50 20 A 40 40 0 0 1 110 20 Z" fill="url(#beam-grad)" />
+                        <!-- The Beam (Wider & Longer) -->
+                        <path d="M100 100 L60 20 A 50 50 0 0 1 140 20 Z" fill="url(#beam-grad)" />
                         
                         <!-- Sharp Directional Arrow -->
-                        <path d="M80 75 L75 85 L80 82 L85 85 Z" fill="#22D3EE" filter="url(#cyan-glow)" />
+                        <path d="M100 95 L92 108 L100 104 L108 108 Z" fill="#FACC15" filter="url(#yellow-glow)" />
                     </svg>
                 </div>
                 
                 <!-- Core Dot (Static) -->
-                <div class="absolute w-3 h-3 bg-cyan-400 border-2 border-white rounded-full shadow-[0_0_10px_#22d3ee] z-30"></div>
+                <div class="absolute w-4 h-4 bg-yellow-400 border-2 border-white rounded-full shadow-[0_0_15px_#facc15] z-30"></div>
                </div>`,
-        iconSize: [160, 160],
-        iconAnchor: [80, 80],
+        iconSize: [200, 200],
+        iconAnchor: [100, 100],
     });
+
+    // Memoize the Target Icon to prevent flickering/restarting animations on re-renders
+    const targetIcon = useMemo(() => L.divIcon({
+        className: 'bg-transparent',
+        html: `<div class="relative flex items-center justify-center w-[160px] h-[160px] pointer-events-none">
+            <!-- SVG Container for Smooth Animation -->
+            <svg width="160" height="160" viewBox="0 0 160 160" class="absolute inset-0">
+                <defs>
+                    <!-- High Intensity Glow -->
+                    <filter id="neon-glow">
+                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                
+                <!-- Rotating Outer Ring (Dashed, Bright Red) -->
+                <g class="animate-[spin_10s_linear_infinite]" style="transform-origin: 80px 80px;">
+                    <circle cx="80" cy="80" r="78" fill="none" stroke="#FF0000" stroke-width="2" stroke-dasharray="10 10" opacity="0.8" filter="url(#neon-glow)" />
+                </g>
+                
+                <!-- Counter-Rotating Inner Brackets (Bright Red) -->
+                <g class="animate-[spin_4s_linear_infinite_reverse]" style="transform-origin: 80px 80px;">
+                    <path d="M 80 10 A 70 70 0 0 1 150 80" fill="none" stroke="#FF0000" stroke-width="3" opacity="1" filter="url(#neon-glow)" />
+                    <path d="M 80 150 A 70 70 0 0 1 10 80" fill="none" stroke="#FF0000" stroke-width="3" opacity="1" filter="url(#neon-glow)" />
+                </g>
+
+                <!-- Scanner Pulse -->
+                <circle cx="80" cy="80" r="70" fill="url(#grad-bright)" class="animate-pulse" opacity="0.3">
+                    <linearGradient id="grad-bright" x1="0%" y1="100%" x2="0%" y2="0%">
+                        <stop offset="0%" style="stop-color:rgba(255,0,0,0.3);stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:rgba(255,0,0,0);stop-opacity:1" />
+                    </linearGradient>
+                </circle>
+            </svg>
+
+            <!-- Center Target Label -->
+            <div class="absolute -top-6 bg-black/90 backdrop-blur border border-red-500/80 px-2 py-0.5 rounded text-[10px] text-red-500 font-mono font-bold tracking-widest shadow-[0_0_15px_rgba(255,0,0,0.6)] z-20">
+                TARGET_ZONE
+            </div>
+
+            <!-- Core Dot -->
+            <div class="w-2 h-2 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,1)] z-10"></div>
+            <div class="absolute w-full h-full border border-red-500/40 rounded-full scale-50 animate-ping"></div>
+           </div>`,
+        iconSize: [160, 160],
+        iconAnchor: [80, 80]
+    }), []); // Empty dependency array as it's static HTML
 
     if (!userLoc) return <div className="flex h-full items-center justify-center text-mission-red animate-pulse">ACQUIRING GPS SIGNAL...</div>;
 
@@ -395,54 +445,7 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                             {/* High-Detail Target Zone Marker (SVG Optimized & Bright) */}
                             <Marker
                                 position={[jitteredTarget.lat, jitteredTarget.lng]}
-                                icon={L.divIcon({
-                                    className: 'bg-transparent',
-                                    html: `<div class="relative flex items-center justify-center w-[160px] h-[160px] pointer-events-none">
-                                        <!-- SVG Container for Smooth Animation -->
-                                        <svg width="160" height="160" viewBox="0 0 160 160" class="absolute inset-0">
-                                            <defs>
-                                                <!-- High Intensity Glow -->
-                                                <filter id="neon-glow">
-                                                    <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-                                                    <feMerge>
-                                                        <feMergeNode in="coloredBlur"/>
-                                                        <feMergeNode in="SourceGraphic"/>
-                                                    </feMerge>
-                                                </filter>
-                                            </defs>
-                                            
-                                            <!-- Rotating Outer Ring (Dashed, Bright Red) -->
-                                            <g class="origin-center animate-[spin_10s_linear_infinite]">
-                                                <circle cx="80" cy="80" r="78" fill="none" stroke="#FF0000" stroke-width="2" stroke-dasharray="10 10" opacity="0.8" filter="url(#neon-glow)" />
-                                            </g>
-                                            
-                                            <!-- Counter-Rotating Inner Brackets (Bright Red) -->
-                                            <g class="origin-center animate-[spin_4s_linear_infinite_reverse]">
-                                                <path d="M 80 10 A 70 70 0 0 1 150 80" fill="none" stroke="#FF0000" stroke-width="3" opacity="1" filter="url(#neon-glow)" />
-                                                <path d="M 80 150 A 70 70 0 0 1 10 80" fill="none" stroke="#FF0000" stroke-width="3" opacity="1" filter="url(#neon-glow)" />
-                                            </g>
-
-                                            <!-- Scanner Pulse -->
-                                            <circle cx="80" cy="80" r="70" fill="url(#grad-bright)" class="animate-pulse" opacity="0.3">
-                                                <linearGradient id="grad-bright" x1="0%" y1="100%" x2="0%" y2="0%">
-                                                    <stop offset="0%" style="stop-color:rgba(255,0,0,0.3);stop-opacity:1" />
-                                                    <stop offset="100%" style="stop-color:rgba(255,0,0,0);stop-opacity:1" />
-                                                </linearGradient>
-                                            </circle>
-                                        </svg>
-
-                                        <!-- Center Target Label -->
-                                        <div class="absolute -top-6 bg-black/90 backdrop-blur border border-red-500/80 px-2 py-0.5 rounded text-[10px] text-red-500 font-mono font-bold tracking-widest shadow-[0_0_15px_rgba(255,0,0,0.6)] z-20">
-                                            TARGET_ZONE
-                                        </div>
-
-                                        <!-- Core Dot -->
-                                        <div class="w-2 h-2 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,1)] z-10"></div>
-                                        <div class="absolute w-full h-full border border-red-500/40 rounded-full scale-50 animate-ping"></div>
-                                       </div>`,
-                                    iconSize: [160, 160],
-                                    iconAnchor: [80, 80]
-                                })}
+                                icon={targetIcon}
                             />
                         </>
                     )}

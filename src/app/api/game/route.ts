@@ -45,15 +45,22 @@ export async function GET(request: Request) {
             });
         }
 
-        // SUPABASE MODE
-        // Get Team Level
+        // Supabase Mode
+        // Get Team Level & Sequence
         const { data: team, error: teamError } = await supabase
             .from('teams')
-            .select('current_level')
+            .select('current_level, zone_sequence')
             .eq('id', teamId)
             .single();
 
         if (teamError || !team) throw new Error('Team not found');
+
+        // Determine Actual Zone ID
+        let actualZoneId = team.current_level;
+        if (team.zone_sequence && Array.isArray(team.zone_sequence) && team.zone_sequence.length >= team.current_level) {
+            // Arrays are 0-indexed, levels are 1-indexed
+            actualZoneId = team.zone_sequence[team.current_level - 1];
+        }
 
         // Get Zone Data (Sanitized - NO Unlock Code returned)
         const { data: zone, error: zoneError } = await supabase
@@ -64,7 +71,7 @@ export async function GET(request: Request) {
             // If we want strict server-side Verification, we should OMIT 'code' here and only check in POST.
             // The Plan says: "Send entered codes to /api/game for verification instead of local string comparison."
             // SO I WILL REMOVE 'code' from the select to enforce server-side check.
-            .eq('id', team.current_level)
+            .eq('id', actualZoneId)
             .single();
 
         if (zoneError || !zone) {
@@ -108,14 +115,24 @@ export async function POST(request: Request) {
 
         // SUPABASE MODE (Existing Logic)
         // Get Team & Current Level
-        const { data: team } = await supabase.from('teams').select('current_level').eq('id', teamId).single();
+        const { data: team } = await supabase
+            .from('teams')
+            .select('current_level, zone_sequence')
+            .eq('id', teamId)
+            .single();
         if (!team) throw new Error('Team not found');
+
+        // Determine Actual Zone ID
+        let actualZoneId = team.current_level;
+        if (team.zone_sequence && Array.isArray(team.zone_sequence) && team.zone_sequence.length >= team.current_level) {
+            actualZoneId = team.zone_sequence[team.current_level - 1];
+        }
 
         // Get Zone Secrets
         const { data: zone } = await supabase
             .from('zones')
             .select('unlock_code, lat, lng, radius_meters')
-            .eq('id', team.current_level)
+            .eq('id', actualZoneId)
             .single();
 
         if (!zone) throw new Error('Zone not found');

@@ -19,14 +19,24 @@ export async function POST(request: Request) {
 
         // SUPABASE MODE
         // Get Team & Level
-        const { data: team } = await supabase.from('teams').select('current_level').eq('id', teamId).single();
+        const { data: team } = await supabase
+            .from('teams')
+            .select('current_level, zone_sequence')
+            .eq('id', teamId)
+            .single();
         if (!team) throw new Error('Team not found');
+
+        // Determine Actual Zone ID
+        let actualZoneId = team.current_level;
+        if (team.zone_sequence && Array.isArray(team.zone_sequence) && team.zone_sequence.length >= team.current_level) {
+            actualZoneId = team.zone_sequence[team.current_level - 1];
+        }
 
         // Get Correct Answer
         const { data: zone } = await supabase
             .from('zones')
             .select('answer')
-            .eq('id', team.current_level)
+            .eq('id', actualZoneId)
             .single();
 
         if (!zone) throw new Error('Zone Data Missing');
