@@ -7,6 +7,7 @@ import { ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const [code, setCode] = useState(['', '', '', '']);
+  const [teamName, setTeamName] = useState('');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -34,37 +35,48 @@ export default function Home() {
 
   const handleInitiate = async () => {
     const enteredCode = code.join('');
-    if (enteredCode.length !== 4) return;
 
     // --- DEVELOPER BACKDOOR ---
     if (enteredCode === '1234') {
-      localStorage.setItem('teamId', 'dev-team-id');
+      localStorage.setItem('teamId', 'mock-team-id');
       localStorage.setItem('teamName', 'Dev Squad');
       router.push('/story');
       return;
     }
 
+    if (enteredCode.length !== 4 || !teamName.trim()) {
+      alert('Please enter Squad Name and Code.');
+      return;
+    }
+
     setLoading(true);
 
-    // Direct Supabase query for Shared Code Login
+    // Direct Supabase query for Any Member Code Login
     const { data, error } = await supabase
       .from('teams')
-      .select('id, name')
-      .eq('access_code', enteredCode)
+      .select('id, team_name')
+      .ilike('team_name', teamName.trim())
+      .or(`leader_verified_code.eq.${enteredCode},member1_verified_code.eq.${enteredCode},member2_verified_code.eq.${enteredCode},member3_verified_code.eq.${enteredCode},member4_verified_code.eq.${enteredCode}`)
       .single();
 
     if (error || !data) {
-      alert('ACCESS DENIED: INVALID CODE');
+      alert('ACCESS DENIED: INVALID NAME OR CODE');
       setLoading(false);
       return;
     }
 
     // Success - Save Session
     localStorage.setItem('teamId', data.id);
-    localStorage.setItem('teamName', data.name);
+    localStorage.setItem('teamName', data.team_name);
 
-    // Redirect
-    router.push('/story');
+    // Check if story already seen
+    const hasSeenStory = localStorage.getItem(`story_seen_${data.id}`);
+
+    if (hasSeenStory) {
+      router.push('/game');
+    } else {
+      router.push('/story');
+    }
   };
 
   return (
@@ -89,27 +101,45 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Input Card */}
-        <div className="w-full bg-white border border-gray-400 rounded-[30px] p-6 pb-10 shadow-sm relative">
-          <label className="block text-[10px] font-bold text-black mb-6 uppercase tracking-[0.2em] font-orbitron text-center">
-            SECURITY CODE
-          </label>
-          <div className="flex justify-between items-center px-1">
-            {[0, 1, 2, 3].map((idx) => (
-              <input
-                key={idx}
-                id={`code-${idx}`}
-                type="text"
-                value={code[idx]}
-                onChange={(e) => handleCodeChange(idx, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(idx, e)}
-                maxLength={1}
-                className="w-14 h-14 rounded-full border border-black text-center text-2xl font-bold font-orbitron focus:border-mission-red focus:border-2 focus:outline-none transition-all text-black bg-transparent p-0"
-                placeholder=""
-                inputMode="numeric"
-                autoComplete="off"
-              />
-            ))}
+        {/* Inputs Container */}
+        <div className="w-full space-y-6">
+
+          {/* Team Name Input */}
+          <div className="w-full bg-white border border-gray-400 rounded-[20px] p-4 shadow-sm relative text-left">
+            <label className="block text-[10px] font-bold text-black mb-2 uppercase tracking-[0.2em] font-orbitron pl-1">
+              SQUAD IDENTITY
+            </label>
+            <input
+              type="text"
+              placeholder="ENTER TEAM NAME"
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              className="w-full h-12 bg-gray-50 border border-gray-200 rounded-xl px-4 text-black text-lg font-bold font-orbitron placeholder:text-gray-400 focus:border-mission-red focus:border-2 focus:outline-none transition-all uppercase"
+            />
+          </div>
+
+          {/* Code Input */}
+          <div className="w-full bg-white border border-gray-400 rounded-[20px] p-6 pb-8 shadow-sm relative">
+            <label className="block text-[10px] font-bold text-black mb-6 uppercase tracking-[0.2em] font-orbitron text-center">
+              SECURITY CODE
+            </label>
+            <div className="flex justify-between items-center px-1">
+              {[0, 1, 2, 3].map((idx) => (
+                <input
+                  key={idx}
+                  id={`code-${idx}`}
+                  type="text"
+                  value={code[idx]}
+                  onChange={(e) => handleCodeChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(idx, e)}
+                  maxLength={1}
+                  className="w-14 h-14 rounded-full border border-black text-center text-2xl font-bold font-orbitron focus:border-mission-red focus:border-2 focus:outline-none transition-all text-black bg-transparent p-0"
+                  placeholder=""
+                  inputMode="numeric"
+                  autoComplete="off"
+                />
+              ))}
+            </div>
           </div>
         </div>
 

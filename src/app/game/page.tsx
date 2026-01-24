@@ -13,6 +13,40 @@ const GameMap = dynamic(() => import('@/components/Map/GameMap'), {
     loading: () => <div className="h-full w-full flex items-center justify-center text-mission-red animate-pulse">INITIALIZING SAT-LINK...</div>
 });
 
+const ScanningOverlay = () => (
+    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="relative w-64 h-64 border-2 border-mission-red rounded-lg overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.5)]">
+            {/* Grid Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.2)_1px,transparent_1px)] bg-[size:20px_20px]" />
+
+            {/* Moving Scan Line */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-mission-red shadow-[0_0_20px_rgba(220,38,38,1)] animate-[scan_2s_linear_infinite]" />
+
+            {/* Corner Markers */}
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-mission-red" />
+            <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-mission-red" />
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-mission-red" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-mission-red" />
+        </div>
+        <div className="mt-8 flex flex-col items-center gap-2">
+            <div className="flex gap-1">
+                {[0, 1, 2].map(i => (
+                    <div key={i} className="w-2 h-2 bg-mission-red rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
+                ))}
+            </div>
+            <p className="text-mission-red font-mono text-lg tracking-widest animate-pulse font-bold">ANALYZING BIOMETRICS...</p>
+        </div>
+        <style jsx>{`
+            @keyframes scan {
+                0% { top: 0%; opacity: 0; }
+                10% { opacity: 1; }
+                90% { opacity: 1; }
+                100% { top: 100%; opacity: 0; }
+            }
+        `}</style>
+    </div>
+);
+
 // Dynamically import AR View for performance & no-SSR
 const ARView = dynamic(() => import('@/components/AR/ARView'), {
     ssr: false,
@@ -40,6 +74,7 @@ export default function GamePage() {
     const { playSound } = useSound();
     const [viewMode, setViewMode] = useState<'MAP' | 'AR'>('MAP');
     const [teamId, setTeamId] = useState<string | null>(null);
+    const [teamName, setTeamName] = useState<string>('');
 
     // Data State
     const [currentZone, setCurrentZone] = useState<Zone | null>(null);
@@ -104,7 +139,59 @@ export default function GamePage() {
             // Fallback if video not found (e.g. desktop debug)
             setCapturedImage(canvas.toDataURL('image/png'));
         } else {
-            alert('CAMERA SYSTEM OBSCURED');
+            showToast('CAMERA SYSTEM OBSCURED', 'error');
+        }
+    };
+
+    const [verifying, setVerifying] = useState(false);
+    const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+    const showToast = (msg: string, type: 'success' | 'error') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleVerify = async () => {
+        if (!capturedImage || !currentZone || !teamId) return;
+        setVerifying(true);
+
+        try {
+            // Convert Base64 to Blob
+            const res = await fetch(capturedImage);
+            const blob = await res.blob();
+            const file = new File([blob], "capture.png", { type: "image/png" });
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('zoneId', currentZone.id.toString());
+            // Added teamId to request as per user requirement
+            formData.append('teamId', teamId);
+
+            // Call Proxy API
+            const verifyRes = await fetch('/api/verify-image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await verifyRes.json();
+
+            if (data.message && data.message.includes("Zone Verified")) {
+                // Determine Success
+                setCapturedImage(null);
+                showToast("TARGET VERIFIED! EXCELLENT WORK.", 'success');
+                playSound('success');
+                // Trigger next phase
+                setTimeout(() => setShowLore(true), 2000);
+            } else {
+                showToast("VERIFICATION FAILED: TARGET NOT IDENTIFIED.", 'error');
+                playSound('error');
+            }
+
+        } catch (err) {
+            console.error(err);
+            showToast("UPLINK ERROR: RETRY VERIFICATION", 'error');
+        } finally {
+            setVerifying(false);
         }
     };
 
@@ -122,11 +209,11 @@ export default function GamePage() {
     useEffect(() => {
         const storedTeamId = localStorage.getItem('teamId');
         if (!storedTeamId) {
-            alert('SESSION INVALID. RETURN TO BASE.');
             router.push('/');
             return;
         }
         setTeamId(storedTeamId);
+        setTeamName(localStorage.getItem('teamName') || 'UNKNOWN SQUAD');
         fetchZoneData(storedTeamId);
     }, []);
 
@@ -137,6 +224,14 @@ export default function GamePage() {
             const res = await fetch(`/api/game?teamId=${tid}`);
             const data = await res.json();
 
+            if (data.error && data.error.includes("Team not found")) {
+                showToast('SESSION EXPIRED: LOGGING OUT', 'error');
+                localStorage.removeItem('teamId');
+                localStorage.removeItem('teamName');
+                router.push('/');
+                return;
+            }
+
             if (data.completed) {
                 setGameCompleted(true);
                 router.push('/success');
@@ -146,6 +241,10 @@ export default function GamePage() {
             if (data.zone) {
                 setCurrentZone(data.zone);
                 setViewMode('MAP');
+            } else {
+                console.warn('No Zone Data Returned', data);
+                // If not completed and no zone, something is wrong.
+                showToast('DATA ERROR: ZONE NOT FOUND', 'error');
             }
 
             // Set Global Timer Start
@@ -161,6 +260,7 @@ export default function GamePage() {
             }
         } catch (err) {
             console.error(err);
+            showToast('CONNECTION FAILURE', 'error');
         } finally {
             setLoadingZone(false);
         }
@@ -259,7 +359,7 @@ export default function GamePage() {
                 }, 1000);
             } else {
                 setChallengeStatus('ERROR');
-                alert(data.message || 'INVALID CODE');
+                showToast(data.message || 'INVALID CODE', 'error');
                 setTimeout(() => setChallengeStatus('IDLE'), 2000);
             }
         } catch (err) {
@@ -280,14 +380,14 @@ export default function GamePage() {
             const data = await res.json();
 
             if (data.success) {
-                alert('CORRECT! ACCESSING NEXT ZONE DATA...');
+                showToast('CORRECT! ACCESSING NEXT ZONE DATA...', 'success');
                 setShowLore(false);
                 fetchZoneData(teamId); // Fetch Next Level
             } else {
-                alert('INCORRECT. TRY AGAIN.');
+                showToast('INCORRECT. TRY AGAIN.', 'error');
             }
         } catch (err) {
-            alert('TRANSMISSION ERROR');
+            showToast('TRANSMISSION ERROR', 'error');
         }
     };
 
@@ -328,7 +428,7 @@ export default function GamePage() {
                 setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
                 setGpsError(false);
             },
-            () => alert('Please enable Location in Browser Settings'),
+            () => showToast('Please enable Location in Browser Settings', 'error'),
             { enableHighAccuracy: true }
         );
     };
@@ -348,6 +448,19 @@ export default function GamePage() {
 
     return (
         <div className="relative h-[100dvh] w-full bg-black overflow-hidden flex flex-col font-sans">
+            {verifying && <ScanningOverlay />}
+
+            {/* TOAST NOTIFICATION */}
+            {toast && (
+                <div className={`absolute top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 rounded-xl border flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 fade-in duration-300 ${toast.type === 'success' ? 'bg-green-500/90 border-green-400 text-white' : 'bg-red-600/90 border-red-500 text-white'}`}>
+                    {toast.type === 'success' ? (
+                        <div className="w-2 h-2 bg-white rounded-full animate-bounce" />
+                    ) : (
+                        <div className="w-2 h-2 bg-white rounded-none animate-pulse" />
+                    )}
+                    <span className="font-bold font-mono tracking-wider text-sm">{toast.msg}</span>
+                </div>
+            )}
             {/* HUD Layer */}
             <div className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-between p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
 
@@ -403,7 +516,8 @@ export default function GamePage() {
                 <div className="flex justify-between items-end relative z-[60] w-full pointer-events-none">
                     {/* ZONE INDICATOR (Left) - Hide in AR or specific style */}
                     <div className={`flex flex-col gap-1 transition-opacity duration-300 ${viewMode === 'AR' ? 'opacity-50 scale-90 origin-bottom-left' : 'opacity-100'}`}>
-                        <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Clearance</div>
+                        <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">OPERATIVE SQUAD</div>
+                        <div className="text-xl font-black text-white font-orbitron tracking-wider truncate max-w-[150px]">{teamName}</div>
                         <div className="bg-black/90 border-l-4 border-mission-red px-4 py-2 skew-x-[-10deg] ml-2 backdrop-blur-md">
                             <div className="skew-x-[10deg] flex items-baseline gap-2">
                                 <span className="text-white font-black text-2xl uppercase italic">ZONE {currentZone?.id?.toString().padStart(2, '0')}</span>
@@ -527,7 +641,7 @@ export default function GamePage() {
                 {viewMode === 'MAP' ? (
                     <GameMap targetLocation={currentZone} userLoc={userLoc} />
                 ) : (
-                    <ARView targetLocation={currentZone} modelUrl="/3dAssets/x.glb" onModelClick={handleModelClick} />
+                    <ARView targetLocation={currentZone} modelUrl="" onModelClick={handleModelClick} />
                 )}
             </div>
 
@@ -673,18 +787,30 @@ export default function GamePage() {
                         <div className="absolute bottom-0 left-0 right-0 p-8 pb-12 flex justify-between items-center z-[210] gap-6">
                             <button
                                 onClick={() => setCapturedImage(null)}
-                                className="flex-1 py-4 bg-gray-800/80 backdrop-blur-md text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-700 active:scale-95 transition-all w-1/3"
+                                disabled={verifying}
+                                className="flex-1 py-4 bg-gray-800/80 backdrop-blur-md text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-700 active:scale-95 transition-all w-1/3 disabled:opacity-50"
                             >
-                                <RefreshCw className="w-5 h-5" />
+                                <RefreshCw className={`w-5 h-5 ${verifying ? 'animate-spin' : ''}`} />
                                 <span className="uppercase tracking-wider text-sm">Retake</span>
                             </button>
 
                             <button
-                                onClick={downloadImage}
-                                className="flex-1 py-4 bg-mission-red text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:bg-red-500 active:scale-95 transition-all w-2/3 border border-white/10"
+                                onClick={handleVerify}
+                                disabled={verifying}
+                                className={`flex-1 py-4 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all w-2/3 border border-white/10 active:scale-95
+                                    ${verifying ? 'bg-gray-500 cursor-wait' : 'bg-mission-red hover:bg-red-500'}`}
                             >
-                                <Download className="w-5 h-5" />
-                                <span className="uppercase tracking-wider text-sm">Save to Comm</span>
+                                {verifying ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span className="uppercase tracking-wider text-sm">ANALYZING...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle className="w-5 h-5" />
+                                        <span className="uppercase tracking-wider text-sm">VERIFY TARGET</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </motion.div>

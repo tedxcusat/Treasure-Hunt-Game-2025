@@ -211,7 +211,13 @@ export default function StoryPage() {
 
                         {/* Swipe to Start */}
                         <div className="mt-6 mb-8 shrink-0">
-                            <SwipeButton onComplete={() => router.push('/game')} />
+                            <SwipeButton onComplete={() => {
+                                const teamId = localStorage.getItem('teamId');
+                                if (teamId) {
+                                    localStorage.setItem(`story_seen_${teamId}`, 'true');
+                                }
+                                router.push('/game');
+                            }} />
                             <div className="text-center mt-6">
                                 <button onClick={() => setPageIndex(0)} className="text-[13px] text-zinc-800 font-medium border-b border-zinc-800 pb-0.5 font-clash tracking-wide">
                                     Go back to the story ?

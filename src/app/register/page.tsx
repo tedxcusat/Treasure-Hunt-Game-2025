@@ -22,8 +22,8 @@ export default function Register() {
     };
 
     const addMember = () => {
-        // Max 3 Operatives (excluding leader) -> Total 4
-        if (formData.members.length < 3) {
+        // Max 4 Operatives (excluding leader) -> Total 5
+        if (formData.members.length < 4) {
             setFormData({ ...formData, members: [...formData.members, ''] });
         }
     };
@@ -38,13 +38,28 @@ export default function Register() {
 
     const handleSubmit = async () => {
         // Basic Validation
-        if (!formData.teamName || !formData.leaderName || !formData.email || !formData.phone) {
+        if (!formData.teamName || !formData.leaderName || !formData.email) {
             alert('Please fill all team leader details.');
             return;
         }
-        if (formData.members.some(m => !m.trim())) {
-            alert('Please fill all member names.');
+
+        // Email Validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            alert('Please enter a valid LEADER email address.');
             return;
+        }
+
+        // Validate Member Emails
+        for (let i = 0; i < formData.members.length; i++) {
+            if (!formData.members[i].trim()) {
+                alert(`Please fill Operative ${i + 1} email.`);
+                return;
+            }
+            if (!emailRegex.test(formData.members[i])) {
+                alert(`Invalid email for Operative ${i + 1}.`);
+                return;
+            }
         }
 
         setLoading(true);
@@ -112,33 +127,33 @@ export default function Register() {
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
-                        <input
-                            type="tel" placeholder="Phone Number"
-                            className="w-full h-14 bg-gray-50 border border-gray-300 rounded-xl px-4 text-black text-lg font-bold font-orbitron placeholder:text-gray-400 focus:border-mission-red focus:border-2 focus:outline-none transition-all"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        />
                     </div>
                 </section>
 
                 {/* Members */}
                 <section className="bg-white p-6 rounded-[30px] border border-gray-400 shadow-sm relative">
                     <div className="absolute -top-3 left-6 bg-white px-2 flex items-center gap-2">
-                        <span className="text-[10px] font-bold font-orbitron text-black uppercase tracking-[0.2em]">SQUAD MEMBERS</span>
-                        <span className="text-[10px] font-bold font-orbitron text-mission-red">{formData.members.length}/3</span>
+                        <span className="text-[10px] font-bold font-orbitron text-black uppercase tracking-[0.2em]">SQUAD EMAILS</span>
+                        <span className="text-[10px] font-bold font-orbitron text-mission-red">{formData.members.length}/4</span>
                     </div>
 
                     <div className="space-y-3 mt-2">
                         {formData.members.map((member, idx) => (
-                            <div key={idx} className="flex gap-2">
-                                <input
-                                    type="text" placeholder={`Operative 0${idx + 1}`}
-                                    className="flex-1 h-14 bg-gray-50 border border-gray-300 rounded-xl px-4 text-black text-lg font-bold font-clash placeholder:text-gray-400 focus:border-mission-red focus:border-2 focus:outline-none transition-all uppercase"
-                                    value={member}
-                                    onChange={(e) => handleMemberChange(idx, e.target.value)}
-                                />
+                            <div key={idx} className="flex gap-2 items-center">
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="email"
+                                        placeholder={`Operative 0${idx + 1} Email`}
+                                        className="w-full h-14 bg-gray-50 border border-gray-300 rounded-xl px-4 text-black text-lg font-bold font-clash placeholder:text-gray-400 focus:border-mission-red focus:border-2 focus:outline-none transition-all"
+                                        value={member}
+                                        onChange={(e) => handleMemberChange(idx, e.target.value)}
+                                    />
+                                </div>
                                 {formData.members.length > 1 && (
-                                    <button onClick={() => removeMember(idx)} className="w-14 h-14 flex items-center justify-center bg-gray-100 rounded-xl text-gray-500 hover:text-white hover:bg-black transition-all">
+                                    <button
+                                        onClick={() => removeMember(idx)}
+                                        className="w-14 h-14 shrink-0 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl text-gray-400 hover:text-white hover:bg-mission-red hover:border-mission-red transition-all"
+                                    >
                                         <Trash2 className="w-5 h-5" />
                                     </button>
                                 )}
@@ -146,10 +161,10 @@ export default function Register() {
                         ))}
                     </div>
 
-                    {formData.members.length < 3 && (
+                    {formData.members.length < 4 && (
                         <button
                             onClick={addMember}
-                            className="w-full mt-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 font-bold font-clash flex items-center justify-center gap-2 hover:border-mission-red hover:text-mission-red transition-all"
+                            className="w-full mt-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 font-bold font-clash flex items-center justify-center gap-2 hover:border-mission-red hover:text-mission-red transition-all hover:bg-red-50"
                         >
                             <Plus className="w-4 h-4" /> ADD OPERATIVE
                         </button>

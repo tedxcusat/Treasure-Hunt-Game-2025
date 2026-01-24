@@ -46,22 +46,21 @@ export async function GET(request: Request) {
             });
         }
 
-        // Supabase Mode
-        // Get Team Level & Sequence & Start Time
+        // Get Team Data (Use 'current_zone' directly as it stores the actual ID now)
         const { data: team, error: teamError } = await supabase
             .from('teams')
-            .select('current_level, zone_sequence, created_at')
+            .select('current_zone, game_start_time')
             .eq('id', teamId)
             .single();
 
-        if (teamError || !team) throw new Error('Team not found');
 
-        // Determine Actual Zone ID
-        let actualZoneId = team.current_level;
-        if (team.zone_sequence && Array.isArray(team.zone_sequence) && team.zone_sequence.length >= team.current_level) {
-            // Arrays are 0-indexed, levels are 1-indexed
-            actualZoneId = team.zone_sequence[team.current_level - 1];
+        if (teamError || !team) {
+            console.error('Supabase Error Details:', teamError);
+            throw new Error(`Team not found. DB Error: ${teamError?.message} (${teamError?.code})`);
         }
+
+        // Determine Actual Zone ID (Directly from DB now)
+        let actualZoneId = team.current_zone;
 
         // Get Zone Data (Sanitized - NO Unlock Code returned)
         const { data: zone, error: zoneError } = await supabase
@@ -75,6 +74,7 @@ export async function GET(request: Request) {
             .eq('id', actualZoneId)
             .single();
 
+
         if (zoneError || !zone) {
             // If no zone found, maybe game complete?
             return NextResponse.json({ completed: true });
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
 
         // Sanitized Zone Data
         return NextResponse.json({
-            startTime: team.created_at, // Send Start Time
+            startTime: team.game_start_time, // Send Start Time
             zone: {
                 id: zone.id,
                 name: zone.name,
@@ -116,19 +116,16 @@ export async function POST(request: Request) {
         }
 
         // SUPABASE MODE (Existing Logic)
-        // Get Team & Current Level
+        // Get Team Data (Use 'current_zone' directly)
         const { data: team } = await supabase
             .from('teams')
-            .select('current_level, zone_sequence')
+            .select('current_zone')
             .eq('id', teamId)
             .single();
         if (!team) throw new Error('Team not found');
 
         // Determine Actual Zone ID
-        let actualZoneId = team.current_level;
-        if (team.zone_sequence && Array.isArray(team.zone_sequence) && team.zone_sequence.length >= team.current_level) {
-            actualZoneId = team.zone_sequence[team.current_level - 1];
-        }
+        let actualZoneId = team.current_zone;
 
         // Get Zone Secrets
         const { data: zone } = await supabase
@@ -158,7 +155,7 @@ export async function POST(request: Request) {
         // Log Success
         await supabase.from('progress').insert([{
             team_id: teamId,
-            zone_id: team.current_level,
+            zone_id: team.current_zone,
             action_type: 'CODE_SUBMIT',
             is_correct: true
         }]);

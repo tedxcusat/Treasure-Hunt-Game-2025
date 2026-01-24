@@ -8,8 +8,7 @@ export default function QuitPage() {
 
     return (
         <div className="relative h-full flex flex-col items-center justify-center p-6 text-center bg-white min-h-screen">
-            {/* Background Grid */}
-            <div className="bg-grid absolute inset-0 z-0 pointer-events-none" />
+
 
             {/* Red Viewfinder Frame */}
             <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-mission-red rounded-tl-xl" />

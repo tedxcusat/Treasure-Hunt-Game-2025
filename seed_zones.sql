@@ -1,0 +1,36 @@
+-- 1. Create Zones Table
+CREATE TABLE IF NOT EXISTS zones (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  radius_meters INTEGER NOT NULL DEFAULT 20,
+  unlock_code TEXT NOT NULL,
+  clues TEXT[] NOT NULL,
+  question TEXT NOT NULL,
+  options JSONB NOT NULL
+);
+
+-- Enable Read Access
+ALTER TABLE zones ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read access" ON zones FOR SELECT USING (true);
+
+-- 2. Seed Zones (CUSAT Campus Locations)
+INSERT INTO zones (id, name, lat, lng, radius_meters, unlock_code, clues, question, options)
+VALUES 
+(1, 'ADM (Administrative Office)', 10.0416, 76.3268, 25, '1234', ARRAY['Near the main entrance circle', 'Look for the administrative block'], 'What gets wetter as it dries?', '["Towel", "Ocean", "Cloud", "Rain"]'::jsonb),
+(2, 'CITTIC', 10.0435, 76.3242, 25, '5678', ARRAY['Near Guest House/TBI', 'Innovation Hub'], 'I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?', '["Echo", "Ghost", "Cloud", "Shadow"]'::jsonb),
+(3, 'SMS (School of Mgmt. Studies)', 10.0409, 76.3284, 25, '9012', ARRAY['Next to the Main Circle', 'Management Block'], 'The more of this there is, the less you see. What is it?', '["Darkness", "Fog", "Light", "Smoke"]'::jsonb),
+(4, 'University Library', 10.0418, 76.3283, 25, '3456', ARRAY['Opposite the SMS building', 'Center of knowledge'], 'David’s parents have three sons: Snap, Crackle, and...?', '["David", "Pop", "Chip", "Dale"]'::jsonb),
+(5, 'Amenity Centre', 10.0436, 76.3235, 25, '7890', ARRAY['Near the University Road shops', 'Student Center'], 'I follow you all the time and copy your every move, but you can’t touch me or catch me. What am I?', '["Shadow", "Reflection", "Ghost", "Twin"]'::jsonb),
+(6, 'Butterfly Park', 10.0425, 76.3256, 30, '2468', ARRAY['Near the Dept. of Applied Chemistry', 'Nature spot'], 'What has many keys but can’t open a single lock?', '["Piano", "Map", "Chest", "Door"]'::jsonb)
+ON CONFLICT (id) DO UPDATE 
+SET 
+  name = EXCLUDED.name,
+  lat = EXCLUDED.lat,
+  lng = EXCLUDED.lng,
+  radius_meters = EXCLUDED.radius_meters,
+  unlock_code = EXCLUDED.unlock_code,
+  clues = EXCLUDED.clues,
+  question = EXCLUDED.question,
+  options = EXCLUDED.options;

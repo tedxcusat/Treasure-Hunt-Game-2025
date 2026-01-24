@@ -7,64 +7,100 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Helper to shuffle array (Fisher-Yates)
+function shuffleArray<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+import { sendTeamCode } from '@/lib/email';
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { teamName, leaderName, email, phone, members } = body;
+        const { teamName, leaderName, email, phone, members } = body; // members is array of strings (names)
 
-        if (!teamName || !leaderName || !email || !phone) {
+        if (!teamName || !leaderName || !email) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Check for Placeholder Keys
-        if (supabaseUrl.includes('placeholder')) {
-            return NextResponse.json({
-                error: 'SERVER CONFIG ERROR: Supabase Keys are missing. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local'
-            }, { status: 500 });
+        // 1. Generate Unique 4-Digit Codes for Leader + 4 Members
+        const generateCode = () => Math.floor(1000 + Math.random() * 9000).toString();
+
+        // Generate a set of unique codes for this team
+        const teamCodes = new Set<string>();
+        while (teamCodes.size < 5) {
+            teamCodes.add(generateCode());
         }
+        const codes = Array.from(teamCodes);
+        const leaderCode = codes[0];
+        const memberCodes = codes.slice(1); // 4 codes for members
 
-        // 1. Generate Unique 4-Digit Code
-        let accessCode = '';
-        let isUnique = false;
+        // 2. Generate Random Zone Sequence (1-6)
+        const zones = [1, 2, 3, 4, 5, 6];
+        const shuffledZones = shuffleArray([...zones]);
+        const startZone = shuffledZones[0];
+        const remainingZones = shuffledZones.slice(1);
 
-        // Retries to ensuring uniqueness
-        for (let i = 0; i < 5; i++) {
-            const potentialCode = Math.floor(1000 + Math.random() * 9000).toString();
-            // Check if exists
-            const { data } = await supabase.from('teams').select('id').eq('access_code', potentialCode).single();
-            if (!data) {
-                accessCode = potentialCode;
-                isUnique = true;
-                break;
-            }
-        }
+        // 3. Prepare Payload
+        const payload: any = {
+            team_name: teamName,
+            leader_name: leaderName,
+            leader_email: email,
+            leader_verified_code: leaderCode,
+            leader_is_active: true,
 
-        if (!isUnique) throw new Error('Failed to generate unique code. Please try again.');
+            // Members Emails & Codes
+            member1_email: members[0] || 'N/A',
+            member1_verified_code: members[0] ? memberCodes[0] : null,
 
-        // 2. Insert into DB
+            member2_email: members[1] || null,
+            member2_verified_code: members[1] ? memberCodes[1] : null,
+
+            member3_email: members[2] || null,
+            member3_verified_code: members[2] ? memberCodes[2] : null,
+
+            member4_email: members[3] || null,
+            member4_verified_code: members[3] ? memberCodes[3] : null,
+
+            // Random Sequence Logic
+            current_zone: startZone,
+            remaining_zones: remainingZones,
+
+            game_start_time: new Date().toISOString()
+        };
+
+        // 4. Insert into DB
         const { data: team, error } = await supabase
             .from('teams')
-            .insert({
-                name: teamName,
-                leader_name: leaderName,
-                email,
-                phone,
-                members,
-                access_code: accessCode
-            })
+            .insert(payload)
             .select()
             .single();
 
         if (error) {
-            console.error('DB Error:', error);
+            console.error('Registration DB Error:', error);
+            if (error.code === '23505') {
+                throw new Error('Team Name or Email already exists.');
+            }
             throw new Error(error.message);
         }
 
-        // 3. Return the code to frontend (No Email)
+        // 5. Send Individual Emails
+        const recipients = [
+            { email: email, code: leaderCode },
+            ...members.map((m: string, i: number) => ({ email: m, code: memberCodes[i] }))
+        ].filter(r => r.email); // Filter out undefined emails
+
+        await sendTeamCode(recipients, teamName);
+
+        // 6. Return Success
         return NextResponse.json({
             success: true,
-            accessCode: accessCode,
-            teamId: team.id
+            teamId: team.id,
+            leaderCode: leaderCode // Optional: return leader code for immediate verify
         });
 
     } catch (error: any) {
