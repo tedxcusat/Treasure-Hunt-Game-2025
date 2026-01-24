@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Plus, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function Register() {
     const router = useRouter();
@@ -85,10 +85,18 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen bg-white text-black p-6 font-clash flex flex-col items-center overflow-y-auto">
+        <div className="min-h-screen bg-white text-black p-6 font-clash flex flex-col items-center overflow-y-auto relative">
+
+            {/* Back Button */}
+            <button
+                onClick={() => router.push('/')}
+                className="absolute top-6 left-6 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border border-gray-300 hover:bg-mission-red hover:text-white hover:border-mission-red transition-colors active:scale-95"
+            >
+                <ArrowLeft className="w-5 h-5" />
+            </button>
 
             {/* Header */}
-            <h1 className="text-3xl font-black font-orbitron text-center mb-8 mt-4 tracking-tighter">
+            <h1 className="text-3xl font-black font-orbitron text-center mb-8 mt-12 tracking-tighter">
                 <span className="text-black">SQUAD</span> <span className="text-mission-red">REGISTRY</span>
             </h1>
 

@@ -156,9 +156,14 @@ export default function Home() {
             )}
           </button>
 
-          <p className="text-base font-clash text-black">
-            Don't have a squad? <button onClick={() => router.push('/register')} className="text-mission-red font-semibold hover:underline">Register here</button>
-          </p>
+          <div className="pt-4">
+            <button
+              onClick={() => router.push('/register')}
+              className="w-full h-14 border-2 border-gray-300 rounded-full font-clash text-lg font-bold uppercase text-gray-500 hover:border-mission-red hover:text-mission-red transition-all active:scale-95"
+            >
+              REGISTER NEW SQUAD
+            </button>
+          </div>
         </div>
 
       </div>
