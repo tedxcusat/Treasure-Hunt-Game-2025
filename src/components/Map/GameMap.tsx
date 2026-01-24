@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { Compass } from 'lucide-react';
+import { Compass, Navigation } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -26,12 +26,31 @@ interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
     requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
-function MapController({ coords, zoom }: { coords: { lat: number, lng: number }, zoom: number }) {
+function MapController({ coords, zoom, followUser, onUserInteraction }: { coords: { lat: number, lng: number }, zoom: number, followUser: boolean, onUserInteraction: () => void }) {
     const map = useMap();
+
+    // Auto-Center Logic
     useEffect(() => {
-        map.setView([coords.lat, coords.lng], zoom, { animate: true });
-        map.invalidateSize(); // Force redraw to prevent grey/black tiles
-    }, [coords, zoom, map]);
+        if (followUser) {
+            map.setView([coords.lat, coords.lng], zoom, { animate: true });
+        }
+    }, [coords, zoom, map, followUser]);
+
+    // Detect Manual Interaction
+    useEffect(() => {
+        const handleInteraction = () => {
+            onUserInteraction();
+        };
+
+        map.on('dragstart', handleInteraction);
+        map.on('zoomstart', handleInteraction); // Optional: if zooming should also break lock
+
+        return () => {
+            map.off('dragstart', handleInteraction);
+            map.off('zoomstart', handleInteraction);
+        };
+    }, [map, onUserInteraction]);
+
     return null;
 }
 
@@ -334,6 +353,8 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
 
     if (!userLoc) return <div className="flex h-full items-center justify-center text-mission-red animate-pulse">ACQUIRING GPS SIGNAL...</div>;
 
+    const [followUser, setFollowUser] = useState(true);
+
     return (
         <div className="relative h-full w-full overflow-hidden bg-black">
             {/* Compass Permission Button (If needed) */}
@@ -344,6 +365,20 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                 >
                     <Compass className="w-4 h-4" />
                     ENABLE COMPASS
+                </button>
+            )}
+
+            {/* RECENTER BUTTON (Shows when map is moved) */}
+            {!followUser && (
+                <button
+                    onClick={() => {
+                        playSound('click');
+                        setFollowUser(true);
+                    }}
+                    className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[400] bg-black/60 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg font-mono font-bold text-xs active:scale-95 transition-all animate-in slide-in-from-bottom-4 fade-in duration-300 pointer-events-auto hover:bg-black/80 hover:border-mission-red/50"
+                >
+                    <Navigation className="w-3 h-3" />
+                    RECENTER
                 </button>
             )}
 
@@ -412,7 +447,12 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                         {/* No Popup for user, just icon */}
                     </Marker>
 
-                    <MapController coords={userLoc} zoom={zoomLevel} />
+                    <MapController
+                        coords={userLoc}
+                        zoom={zoomLevel}
+                        followUser={followUser}
+                        onUserInteraction={() => setFollowUser(false)}
+                    />
 
                     {/* Navigation Route (Computed Path) */}
                     {jitteredTarget && displayPath.length > 0 && (
