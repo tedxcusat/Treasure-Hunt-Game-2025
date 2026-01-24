@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
         if (existingTeam) {
             // If team exists, return their code (Recover session)
-            console.log(`Recovering existing team: ${existingTeam.team_name}`);
+            // If team exists, return their code (Recover session)
             return NextResponse.json({
                 success: true,
                 teamId: existingTeam.id,
@@ -116,7 +116,9 @@ export async function POST(req: Request) {
 
             // Don't await strictly if performance is issue, but Vercel freezes lambda.
             // We await but catch error so we return success to user regardless.
-            await sendTeamCode(recipients, teamName);
+            // UPDATE: Removing await to fix "Fetch Failed" timeout on mobile. 
+            // Vercel might kill this, but UI success > Email success.
+            sendTeamCode(recipients, teamName).catch(err => console.error("Background Email Error:", err));
         } catch (emailErr) {
             console.error("Email sending failed (non-critical):", emailErr);
         }

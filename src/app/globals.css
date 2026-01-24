@@ -59,6 +59,27 @@ body>video {
   left: 0 !important;
 }
 
+
 #arjs-video {
   display: none !important;
+}
+
+@keyframes scan {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
 }

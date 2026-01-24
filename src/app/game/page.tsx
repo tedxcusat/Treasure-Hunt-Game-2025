@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw, BookOpen } from 'lucide-react';
+import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw, BookOpen, RefreshCcw, Crosshair, AlertTriangle } from 'lucide-react';
 import { STORY_PAGES } from '@/lib/storyData';
 
 // Dynamically import Map to prevent SSR issues with Leaflet
@@ -13,39 +13,7 @@ const GameMap = dynamic(() => import('@/components/Map/GameMap'), {
     loading: () => <div className="h-full w-full flex items-center justify-center text-mission-red animate-pulse">INITIALIZING SAT-LINK...</div>
 });
 
-const ScanningOverlay = () => (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="relative w-64 h-64 border-2 border-mission-red rounded-lg overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.5)]">
-            {/* Grid Pattern */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.2)_1px,transparent_1px)] bg-[size:20px_20px]" />
 
-            {/* Moving Scan Line */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-mission-red shadow-[0_0_20px_rgba(220,38,38,1)] animate-[scan_2s_linear_infinite]" />
-
-            {/* Corner Markers */}
-            <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-mission-red" />
-            <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-mission-red" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-mission-red" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-mission-red" />
-        </div>
-        <div className="mt-8 flex flex-col items-center gap-2">
-            <div className="flex gap-1">
-                {[0, 1, 2].map(i => (
-                    <div key={i} className="w-2 h-2 bg-mission-red rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
-                ))}
-            </div>
-            <p className="text-mission-red font-mono text-lg tracking-widest animate-pulse font-bold">ANALYZING BIOMETRICS...</p>
-        </div>
-        <style jsx>{`
-            @keyframes scan {
-                0% { top: 0%; opacity: 0; }
-                10% { opacity: 1; }
-                90% { opacity: 1; }
-                100% { top: 100%; opacity: 0; }
-            }
-        `}</style>
-    </div>
-);
 
 // Dynamically import AR View for performance & no-SSR
 const ARView = dynamic(() => import('@/components/AR/ARView'), {
@@ -134,6 +102,7 @@ export default function GamePage() {
 
             // Optional: Play shutter sound or haptic here
             if (navigator.vibrate) navigator.vibrate(50);
+            playSound('scope');
         } else if (canvas) {
             // Fallback if video not found (e.g. desktop debug)
             setCapturedImage(canvas.toDataURL('image/png'));
@@ -430,19 +399,32 @@ export default function GamePage() {
 
     return (
         <div className="relative h-[100dvh] w-full bg-black overflow-hidden flex flex-col font-sans">
-            {verifying && <ScanningOverlay />}
+
 
             {/* TOAST NOTIFICATION */}
-            {toast && (
-                <div className={`absolute top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 rounded-xl border flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 fade-in duration-300 ${toast.type === 'success' ? 'bg-green-500/90 border-green-400 text-white' : 'bg-red-600/90 border-red-500 text-white'}`}>
-                    {toast.type === 'success' ? (
-                        <div className="w-2 h-2 bg-white rounded-full animate-bounce" />
-                    ) : (
-                        <div className="w-2 h-2 bg-white rounded-none animate-pulse" />
-                    )}
-                    <span className="font-bold font-mono tracking-wider text-sm">{toast.msg}</span>
-                </div>
-            )}
+            {/* TOAST NOTIFICATION - DYNAMIC ISLAND STYLE */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ y: -100, opacity: 0, scale: 0.8 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: -100, opacity: 0, scale: 0.8 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className={`absolute top-6 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-sm px-6 py-4 rounded-[2rem] shadow-2xl flex items-center justify-between pointer-events-none backdrop-blur-xl ${toast.type === 'success'
+                            ? 'bg-green-500/90 shadow-[0_5px_20px_rgba(34,197,94,0.4)]'
+                            : 'bg-mission-red/90 shadow-[0_5px_20px_rgba(220,38,38,0.4)]'
+                            }`}
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${toast.type === 'success' ? 'bg-white/20' : 'bg-black/20'}`}>
+                                {toast.type === 'success' ? <CheckCircle className="w-5 h-5 text-white" /> : <AlertTriangle className="w-5 h-5 text-white" />}
+                            </div>
+                            <span className="font-bold text-white text-sm tracking-wide">{toast.msg}</span>
+                        </div>
+                        {toast.type === 'success' && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* HUD Layer */}
             <div className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-between p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
 
@@ -495,73 +477,206 @@ export default function GamePage() {
                     </button>
                 )}
 
-                <div className="flex justify-between items-end relative z-[60] w-full pointer-events-none">
-                    {/* ZONE INDICATOR (Left) - Hide in AR or specific style */}
-                    <div className={`flex flex-col gap-1 transition-opacity duration-300 ${viewMode === 'AR' ? 'opacity-50 scale-90 origin-bottom-left' : 'opacity-100'}`}>
-                        <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">OPERATIVE SQUAD</div>
-                        <div className="text-xl font-black text-white font-orbitron tracking-wider truncate max-w-[150px]">{teamName}</div>
-                        <div className="bg-black/90 border-l-4 border-mission-red px-4 py-2 skew-x-[-10deg] ml-2 backdrop-blur-md">
-                            <div className="skew-x-[10deg] flex items-baseline gap-2">
-                                <span className="text-white font-black text-2xl uppercase italic">ZONE {currentZone?.id?.toString().padStart(2, '0')}</span>
-                                <span className="text-mission-red text-[10px] font-bold animate-pulse">• ACTIVE</span>
-                            </div>
-                        </div>
-                    </div>
+                {/* CAPTURE REVIEW OVERLAY */}
+                {capturedImage && (
+                    <div className="absolute inset-0 z-[80] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+                        <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden border-2 border-mission-red shadow-[0_0_30px_rgba(220,38,38,0.5)] bg-black">
+                            {/* HUD CORNERS */}
+                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-mission-red z-20" />
+                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-mission-red z-20" />
+                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-mission-red z-20" />
+                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-mission-red z-20" />
 
-                    {/* SWITCH VIEW / CAMERA CONTROLS (Right/Center) */}
-                    <div className="flex flex-col items-center gap-2 pointer-events-auto">
-                        {viewMode === 'MAP' && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="flex flex-col items-center gap-2 mr-4 mb-4"
-                            >
-                                <motion.button
+                            {/* SCAN LINE ANIMATION */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-mission-red/20 to-transparent z-10 animate-scan pointer-events-none" />
+
+                            <img src={capturedImage} alt="Capture" className="w-full h-full object-cover opacity-80" />
+
+                            {/* PREVIEW ACTIONS */}
+                            <div className="absolute bottom-6 w-full px-6 flex items-center justify-between z-30">
+                                {/* RETAKE (Circular) */}
+                                <button
                                     onClick={() => {
                                         playSound('click');
-                                        setViewMode('AR');
+                                        setCapturedImage(null);
                                     }}
-                                    whileHover="hover"
-                                    whileTap="tap"
-                                    initial="idle"
-                                    className="w-20 h-20 relative flex items-center justify-center focus:outline-none"
+                                    className="w-14 h-14 rounded-full bg-black/60 border border-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-lg active:scale-90 hover:bg-white/10 transition-all group"
                                 >
-                                    {/* Outer Ripple Ring */}
-                                    <motion.div
-                                        variants={{
-                                            idle: { scale: 1, opacity: 0.2 },
-                                            hover: { scale: 1.2, opacity: 0.4 },
-                                            tap: { scale: 0.9, opacity: 0.6 }
-                                        }}
-                                        transition={{ duration: 0.4 }}
-                                        className="absolute inset-0 bg-mission-red/20 rounded-full border border-mission-red/50"
-                                    />
+                                    <RefreshCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+                                </button>
 
-                                    {/* Main Button Body (Red Camera) */}
-                                    <motion.div
-                                        variants={{
-                                            idle: { scale: 1 },
-                                            hover: { scale: 1.05 },
-                                            tap: { scale: 0.95 }
-                                        }}
-                                        className="relative w-16 h-16 bg-mission-red rounded-full flex items-center justify-center border-4 border-white/20 shadow-[0_0_20px_rgba(220,38,38,0.6)] z-10"
-                                    >
-                                        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/20 to-transparent pointer-events-none" />
-                                        <Camera className="w-7 h-7 text-white drop-shadow-md" />
-                                    </motion.div>
-
-                                    {/* Rotating Reticle Ring */}
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                                        className="absolute inset-1 border-[1px] border-dashed border-white/30 rounded-full z-0"
-                                    />
-                                </motion.button>
-                            </motion.div>
-                        )}
+                                {/* VERIFY (Hero Pill) */}
+                                <button
+                                    onClick={() => {
+                                        playSound('click');
+                                        handleVerify();
+                                    }}
+                                    disabled={verifying}
+                                    className="flex-1 ml-4 h-14 bg-mission-red text-white font-black text-lg uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-red-600 border border-white/20"
+                                >
+                                    {verifying ? (
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Crosshair className="w-5 h-5" />
+                                            INITIATE UPLINK
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-mission-red font-mono text-xs mt-4 animate-pulse uppercase tracking-[0.2em]">CONFIRM TARGET DATA INTEGRITY</p>
                     </div>
-                </div>
+                )}
+
+                {!capturedImage && (
+                    <div className="flex justify-between items-end relative z-[60] w-full pointer-events-none">
+                        {/* ZONE INDICATOR (Left) - Hide in AR or specific style */}
+                        <div className={`flex flex-col gap-1 transition-opacity duration-300 ${viewMode === 'AR' ? 'opacity-50 scale-90 origin-bottom-left' : 'opacity-100'}`}>
+                            <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">OPERATIVE SQUAD</div>
+                            <div className="text-xl font-black text-white font-orbitron tracking-wider truncate max-w-[150px]">{teamName}</div>
+                            <div className="bg-black/90 border-l-4 border-mission-red px-4 py-2 skew-x-[-10deg] ml-2 backdrop-blur-md">
+                                <div className="skew-x-[10deg] flex items-baseline gap-2">
+                                    <span className="text-white font-black text-2xl uppercase italic">ZONE {currentZone?.id?.toString().padStart(2, '0')}</span>
+                                    <span className="text-mission-red text-[10px] font-bold animate-pulse">• ACTIVE</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SWITCH VIEW / CAMERA CONTROLS (Right/Center) */}
+                        <div className="flex flex-col items-center gap-2 pointer-events-auto">
+                            {viewMode === 'MAP' && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    className="flex flex-col items-center gap-2 mr-4 mb-4"
+                                >
+                                    <motion.button
+                                        onClick={() => {
+                                            playSound('click');
+                                            setViewMode('AR');
+                                        }}
+                                        whileHover="hover"
+                                        whileTap="tap"
+                                        initial="idle"
+                                        className="w-20 h-20 relative flex items-center justify-center focus:outline-none"
+                                    >
+                                        {/* Outer Ripple Ring */}
+                                        <motion.div
+                                            variants={{
+                                                idle: { scale: 1, opacity: 0.2 },
+                                                hover: { scale: 1.2, opacity: 0.4 },
+                                                tap: { scale: 0.9, opacity: 0.6 }
+                                            }}
+                                            transition={{ duration: 0.4 }}
+                                            className="absolute inset-0 bg-mission-red/20 rounded-full border border-mission-red/50"
+                                        />
+
+                                        {/* Main Button Body (Red Camera) */}
+                                        <motion.div
+                                            variants={{
+                                                idle: { scale: 1 },
+                                                hover: { scale: 1.05 },
+                                                tap: { scale: 0.95 }
+                                            }}
+                                            className="relative w-16 h-16 bg-mission-red rounded-full flex items-center justify-center border-4 border-white/20 shadow-[0_0_20px_rgba(220,38,38,0.6)] z-10"
+                                        >
+                                            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/20 to-transparent pointer-events-none" />
+                                            <Camera className="w-7 h-7 text-white drop-shadow-md" />
+                                        </motion.div>
+
+                                        {/* Rotating Reticle Ring */}
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                                            className="absolute inset-1 border-[1px] border-dashed border-white/30 rounded-full z-0"
+                                        />
+                                    </motion.button>
+                                </motion.div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* CAPTURE REVIEW OVERLAY */}
+                {capturedImage && (
+                    <div className="absolute inset-0 z-[80] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 pointer-events-auto">
+                        <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden border-2 border-mission-red shadow-[0_0_30px_rgba(220,38,38,0.5)] bg-black">
+                            {/* HUD CORNERS */}
+                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-mission-red z-20" />
+                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-mission-red z-20" />
+                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-mission-red z-20" />
+                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-mission-red z-20" />
+
+                            {/* SCAN LINE ANIMATION (Always visible or conditional?) User wants "scanning ui inside this". */}
+                            {/* Let's make it always visible for effect, or only when verifying? user said "scanning ui inside this". */}
+                            {/* The original ScanningOverlay had moving scanline. I'll add it back here, visible when verifying OR always? */}
+                            {/* Usually scanning happens during verification. */}
+
+                            {/* Grid Pattern & Scan Line - Visible only when VERIFYING */}
+                            {verifying && (
+                                <>
+                                    <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.2)_1px,transparent_1px)] bg-[size:20px_20px] z-20 pointer-events-none" />
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-mission-red shadow-[0_0_20px_rgba(220,38,38,1)] animate-[scan_2s_linear_infinite] z-20 pointer-events-none" />
+                                    <div className="absolute inset-0 flex items-center justify-center z-30">
+                                        <p className="text-mission-red font-mono text-lg tracking-widest animate-pulse font-bold bg-black/50 px-4 py-1 backdrop-blur-sm">ANALYZING BIOMETRICS...</p>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Standard Static Scan Element (Always there for style) */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-mission-red/5 to-transparent z-10 pointer-events-none" />
+
+                            <img src={capturedImage} alt="Capture" className="w-full h-full object-cover opacity-80" />
+
+                            {/* CLOSE (Top Left) */}
+                            <button
+                                onClick={() => {
+                                    playSound('click');
+                                    setCapturedImage(null);
+                                }}
+                                className="absolute top-4 left-4 z-40 w-12 h-12 rounded-full bg-black/60 border border-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-lg active:scale-90 hover:bg-white/10 transition-all group"
+                            >
+                                <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                            </button>
+
+                            {/* RETAKE (Top Right) */}
+                            <button
+                                onClick={() => {
+                                    playSound('click');
+                                    setCapturedImage(null);
+                                }}
+                                className="absolute top-4 right-4 z-40 w-12 h-12 rounded-full bg-black/60 border border-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-lg active:scale-90 hover:bg-white/10 transition-all group"
+                            >
+                                <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                            </button>
+
+                            {/* PREVIEW ACTIONS */}
+                            <div className="absolute bottom-6 w-full px-6 flex items-center justify-center z-30">
+                                {/* VERIFY (Hero Pill) */}
+                                <button
+                                    onClick={() => {
+                                        playSound('click');
+                                        handleVerify();
+                                    }}
+                                    disabled={verifying}
+                                    className="w-full h-14 bg-mission-red text-white font-black text-lg uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-red-600 border border-white/20"
+                                >
+                                    {verifying ? (
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Crosshair className="w-5 h-5" />
+                                            UPLOAD OBJECT
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-mission-red font-mono text-xs mt-4 animate-pulse uppercase tracking-[0.2em]">CONFIRM TARGET DATA INTEGRITY</p>
+                    </div>
+                )}
 
                 {/* AR SPECIFIC OVERLAY (Absolute Full Screen) */}
                 <AnimatePresence>
@@ -703,77 +818,7 @@ export default function GamePage() {
 
 
 
-            {/* IMAGE PREVIEW OVERLAY (Full Screen) */}
-            <AnimatePresence>
-                {capturedImage && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-[200] bg-black flex flex-col pointer-events-auto"
-                    >
-                        {/* Image Container */}
-                        <div className="relative flex-1 w-full h-full">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={capturedImage}
-                                alt="Captured"
-                                className="w-full h-full object-contain bg-black"
-                            />
 
-                            {/* Top Gradient Overlay */}
-                            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
-
-                            {/* Bottom Gradient Overlay */}
-                            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
-                        </div>
-
-                        {/* TOP CONTROLS */}
-                        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-[210]">
-                            <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                                <span className="text-white/90 font-mono text-xs tracking-widest uppercase">CAPTURED_IMG_001.PNG</span>
-                            </div>
-                            <button
-                                onClick={() => setCapturedImage(null)}
-                                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 active:scale-90 transition-transform hover:bg-white/10"
-                            >
-                                <X className="w-5 h-5 text-white" />
-                            </button>
-                        </div>
-
-                        {/* BOTTOM CONTROLS */}
-                        <div className="absolute bottom-0 left-0 right-0 p-8 pb-12 flex justify-between items-center z-[210] gap-6">
-                            <button
-                                onClick={() => setCapturedImage(null)}
-                                disabled={verifying}
-                                className="flex-1 py-4 bg-gray-800/80 backdrop-blur-md text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-700 active:scale-95 transition-all w-1/3 disabled:opacity-50"
-                            >
-                                <RefreshCw className={`w-5 h-5 ${verifying ? 'animate-spin' : ''}`} />
-                                <span className="uppercase tracking-wider text-sm">Retake</span>
-                            </button>
-
-                            <button
-                                onClick={handleVerify}
-                                disabled={verifying}
-                                className={`flex-1 py-4 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all w-2/3 border border-white/10 active:scale-95
-                                    ${verifying ? 'bg-gray-500 cursor-wait' : 'bg-mission-red hover:bg-red-500'}`}
-                            >
-                                {verifying ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        <span className="uppercase tracking-wider text-sm">ANALYZING...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <CheckCircle className="w-5 h-5" />
-                                        <span className="uppercase tracking-wider text-sm">VERIFY TARGET</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* Global Red Border Overlay - Tuned for rounded corners */}
             <div className="absolute inset-0 pointer-events-none border-[3px] border-mission-red rounded-[2rem] z-40 m-1" />

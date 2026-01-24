@@ -100,7 +100,7 @@ export default function Register() {
                 <span className="text-black">SQUAD</span> <span className="text-mission-red">REGISTRY</span>
             </h1>
 
-            <div className="w-full max-w-md space-y-8 pb-32">
+            <div className="w-full max-w-md space-y-8 pb-40">
 
                 {/* Team Details */}
                 <section className="bg-white p-6 rounded-[30px] border border-gray-400 shadow-sm relative">
@@ -178,15 +178,19 @@ export default function Register() {
                         </button>
                     )}
                 </section>
+            </div>
 
-                <button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="w-full bg-mission-red text-white h-16 rounded-full font-black font-orbitron text-xl uppercase tracking-widest hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-500/20 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                    {loading ? 'REGISTERING...' : <>CONFIRM SQUAD <ArrowRight className="w-6 h-6 stroke-[2.5]" /></>}
-                </button>
-
+            {/* STICKY FOOTER ACTION */}
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent pt-12 z-50">
+                <div className="max-w-md mx-auto">
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="w-full bg-mission-red text-white h-16 rounded-full font-black font-orbitron text-xl uppercase tracking-widest hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-500/20 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                        {loading ? 'REGISTERING...' : <>CONFIRM SQUAD <ArrowRight className="w-6 h-6 stroke-[2.5]" /></>}
+                    </button>
+                </div>
             </div>
         </div>
     );
