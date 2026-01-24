@@ -87,8 +87,7 @@ export default function Home() {
 
         {/* Logo Section */}
         <div className="flex flex-col items-center gap-4">
-          {/* Placeholder Square Element from mockup */}
-          <div className="w-24 h-24 bg-gray-200 mb-2" />
+
 
           <div className="text-center">
             <h1 className="text-[2.5rem] font-black tracking-tighter font-orbitron leading-none">

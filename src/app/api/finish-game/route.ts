@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // THE MASTER KEY (Hardcoded for this event as per story "we give the key")
 // In a real app, this might be in the DB or ENV.
-const MASTER_EXTRACTION_KEY = "2026";
+const MASTER_EXTRACTION_KEY = "2025";
 
 export async function POST(req: Request) {
     try {

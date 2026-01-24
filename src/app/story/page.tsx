@@ -72,7 +72,7 @@ export default function StoryPage() {
         <div className="flex flex-col h-[100dvh] w-full bg-white text-black font-clash overflow-hidden">
             {/* Header */}
             <header className="flex items-center justify-center p-6 pt-12">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase font-orbitron tracking-[0.3em]">TEDXCUSAT - 2026</span>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase font-orbitron tracking-[0.3em]">TEDXCUSAT - 2025</span>
             </header>
 
             {!isLastPage ? (
