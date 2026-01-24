@@ -52,12 +52,36 @@ export default function Home() {
     setLoading(true);
 
     // Direct Supabase query for Any Member Code Login
-    const { data, error } = await supabase
+    // 1. Fetch Team by Name (Case Insensitive)
+    const { data: team, error } = await supabase
       .from('teams')
-      .select('id, team_name')
+      .select('*') // create strict RLS later if needed, but for now we need to check codes
       .ilike('team_name', teamName.trim())
-      .or(`leader_verified_code.eq.${enteredCode},member1_verified_code.eq.${enteredCode},member2_verified_code.eq.${enteredCode},member3_verified_code.eq.${enteredCode},member4_verified_code.eq.${enteredCode}`)
       .single();
+
+    if (error || !team) {
+      alert('TEAM NOT FOUND. CHECK SPELLING.');
+      setLoading(false);
+      return;
+    }
+
+    // 2. Verify Code Locally (More Reliable)
+    const validCodes = [
+      team.leader_verified_code,
+      team.member1_verified_code,
+      team.member2_verified_code,
+      team.member3_verified_code,
+      team.member4_verified_code
+    ];
+
+    if (!validCodes.includes(enteredCode)) {
+      alert('INVALID ACCESS CODE FOR THIS TEAM.');
+      setLoading(false);
+      return;
+    }
+
+    // Success - Use 'team' object directly
+    const data = team;
 
     if (error || !data) {
       alert('ACCESS DENIED: INVALID NAME OR CODE');
