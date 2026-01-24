@@ -29,12 +29,19 @@ interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
 function MapController({ coords, zoom, followUser, onUserInteraction }: { coords: { lat: number, lng: number }, zoom: number, followUser: boolean, onUserInteraction: () => void }) {
     const map = useMap();
 
-    // Auto-Center Logic
+    // 1. Handle Zoom Updates (Always works, regardless of lock)
+    useEffect(() => {
+        if (map.getZoom() !== zoom) {
+            map.setZoom(zoom, { animate: true });
+        }
+    }, [zoom, map]);
+
+    // 2. Handle Auto-Centering (Only when locked)
     useEffect(() => {
         if (followUser) {
-            map.setView([coords.lat, coords.lng], zoom, { animate: true });
+            map.panTo([coords.lat, coords.lng], { animate: true });
         }
-    }, [coords, zoom, map, followUser]);
+    }, [coords, followUser, map]);
 
     // Detect Manual Interaction
     useEffect(() => {
@@ -358,14 +365,17 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
     return (
         <div className="relative h-full w-full overflow-hidden bg-black">
             {/* Compass Permission Button (If needed) */}
+            {/* Compass Permission Button (iOS Requirement) */}
             {!permissionGranted && (
-                <button
-                    onClick={requestCompassPermission}
-                    className="absolute top-4 left-4 z-[400] bg-black/80 text-mission-red border border-mission-red/50 px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md font-mono text-xs font-bold animate-pulse pointer-events-auto"
-                >
-                    <Compass className="w-4 h-4" />
-                    ENABLE COMPASS
-                </button>
+                <div className="absolute inset-0 z-[400] flex items-center justify-center pointer-events-none">
+                    <button
+                        onClick={requestCompassPermission}
+                        className="pointer-events-auto bg-black/80 text-mission-red border border-mission-red/50 px-6 py-4 rounded-xl flex items-center gap-3 backdrop-blur-md font-mono text-sm font-bold animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.5)]"
+                    >
+                        <Compass className="w-6 h-6" />
+                        <span>NO COMPASS SIGNAL<br /><span className="text-[10px] text-gray-400 font-normal opacity-80">TAP TO CALIBRATE</span></span>
+                    </button>
+                </div>
             )}
 
             {/* RECENTER BUTTON (Shows when map is moved) */}
