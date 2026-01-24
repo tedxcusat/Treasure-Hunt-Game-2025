@@ -100,6 +100,7 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
 
     const [heading, setHeading] = useState(0);
     const [permissionGranted, setPermissionGranted] = useState(false);
+    const [followUser, setFollowUser] = useState(true);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
@@ -360,8 +361,6 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
 
     if (!userLoc) return <div className="flex h-full items-center justify-center text-mission-red animate-pulse">ACQUIRING GPS SIGNAL...</div>;
 
-    const [followUser, setFollowUser] = useState(true);
-
     return (
         <div className="relative h-full w-full overflow-hidden bg-black">
             {/* Compass Permission Button (If needed) */}
@@ -431,11 +430,11 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
             </div>
 
             <div
-                className="absolute top-1/2 left-1/2 origin-center transition-transform duration-200 ease-linear will-change-transform"
+                className={`absolute top-1/2 left-1/2 origin-center transition-transform will-change-transform ${followUser ? 'duration-200 ease-linear' : 'duration-500 ease-out'}`}
                 style={{
                     width: '150vmax',
                     height: '150vmax',
-                    transform: `translate(-50%, -50%) rotate(${-heading}deg)`
+                    transform: `translate(-50%, -50%) rotate(${followUser ? -heading : 0}deg)`
                 }}
             >
                 <MapContainer

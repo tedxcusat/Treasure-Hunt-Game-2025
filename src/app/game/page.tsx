@@ -19,7 +19,7 @@ const ARView = dynamic(() => import('@/components/AR/ARView'), {
     loading: () => <div className="h-full w-full flex items-center justify-center text-mission-red animate-pulse">INITIALIZING OPTICS...</div>
 });
 
-const ZONE_DURATION = 1800; // 30 Minutes
+
 
 interface Zone {
     id: number;
@@ -47,7 +47,8 @@ export default function GamePage() {
     const [gameCompleted, setGameCompleted] = useState(false);
 
     // Timer State
-    const [timeLeft, setTimeLeft] = useState(ZONE_DURATION);
+    const [startTime, setStartTime] = useState<number | null>(null);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
 
     // Modals
@@ -57,7 +58,7 @@ export default function GamePage() {
     // Game Flow State
     const [showChallenge, setShowChallenge] = useState(false); // Code Entry
     const [showLore, setShowLore] = useState(false); // Lore Question
-    const [showStoryModal, setShowStoryModal] = useState(false); // Story Board
+    // const [showStoryModal, setShowStoryModal] = useState(false); // MOVED TO /story PAGE
     const [inputCode, setInputCode] = useState('');
     const [challengeStatus, setChallengeStatus] = useState<'IDLE' | 'CHECKING' | 'SUCCESS' | 'ERROR'>('IDLE');
 
@@ -145,9 +146,19 @@ export default function GamePage() {
 
             if (data.zone) {
                 setCurrentZone(data.zone);
-                setTimeLeft(ZONE_DURATION);
-                setIsTimerRunning(true);
                 setViewMode('MAP');
+            }
+
+            // Set Global Timer Start
+            if (data.startTime) {
+                const start = new Date(data.startTime).getTime();
+                setStartTime(start);
+                setIsTimerRunning(true);
+            } else {
+                // Fallback if DB doesn't have time (Shouldn't happen, but safe)
+                console.warn("No Start Time Found - Defaulting to Now");
+                setStartTime(Date.now());
+                setIsTimerRunning(true);
             }
         } catch (err) {
             console.error(err);
@@ -189,19 +200,28 @@ export default function GamePage() {
         return R * c;
     };
 
-    // Timer Logic
+    // Timer Logic: Count UP from Global Start Time
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        if (isTimerRunning && timeLeft > 0) {
-            interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
+        if (isTimerRunning && startTime) {
+            // Update immediately
+            const now = Date.now();
+            setElapsedSeconds(Math.floor((now - startTime) / 1000));
+
+            interval = setInterval(() => {
+                const currentNow = Date.now();
+                setElapsedSeconds(Math.floor((currentNow - startTime) / 1000));
+            }, 1000);
         }
         return () => clearInterval(interval);
-    }, [isTimerRunning, timeLeft]);
+    }, [isTimerRunning, startTime]);
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} s`;
+    // Format: HH:MM:SS
+    const formatTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     // Clue Logic
@@ -343,15 +363,15 @@ export default function GamePage() {
                         <Power className="w-5 h-5" />
                     </button>
 
-                    <div className={`px-6 py-2 bg-black/80 border border-mission-red rounded-full flex items-center gap-2 text-white font-mono text-xl backdrop-blur-md shadow-lg ${timeLeft <= 5 ? 'text-red-500 border-red-500 animate-pulse' : ''}`}>
-                        {formatTime(timeLeft)}
+                    <div className="px-6 py-2 bg-black/80 border border-mission-red rounded-full flex items-center gap-2 text-white font-mono text-xl backdrop-blur-md shadow-lg">
+                        {formatTime(elapsedSeconds)}
                     </div>
 
                     <div className="flex gap-2">
                         <button
                             onClick={() => {
                                 playSound('click');
-                                setShowStoryModal(true);
+                                router.push('/story');
                             }}
                             className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-blue-400"
                         >
@@ -610,56 +630,7 @@ export default function GamePage() {
                 </div>
             )}
 
-            {/* STORY BOARD MODAL */}
-            {showStoryModal && (
-                <div className="absolute inset-0 z-[100] bg-black/95 flex items-center justify-center p-6 backdrop-blur-md">
-                    <div className="w-full max-w-md bg-black border-2 border-mission-red/50 shadow-[0_0_50px_rgba(220,38,38,0.5)] rounded-[2rem] overflow-hidden relative pointer-events-auto h-[75vh] flex flex-col">
 
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-mission-red/20 to-transparent border-b border-mission-red/30 p-5 flex justify-between items-center shrink-0">
-                            <div className="flex items-center gap-3 text-mission-red">
-                                <BookOpen className="w-6 h-6 animate-pulse" />
-                                <span className="font-black font-orbitron uppercase tracking-[0.2em] text-sm text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">MISSION ARCHIVE</span>
-                            </div>
-                            <button onClick={() => setShowStoryModal(false)} className="bg-black/50 border border-white/10 p-2 rounded-full hover:bg-mission-red hover:border-mission-red group transition-all duration-300">
-                                <X className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                            </button>
-                        </div>
-
-                        {/* Content Scroll */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-12 scrollbar-hide">
-                            {STORY_PAGES.map((page, idx) => (
-                                <div key={idx} className="relative pl-6 border-l border-dashed border-white/20 group">
-                                    {/* Animated Timeline Node */}
-                                    <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 bg-black border border-mission-red rounded-full group-hover:bg-mission-red group-hover:shadow-[0_0_10px_#ef4444] transition-all duration-500" />
-
-                                    <h4 className="text-mission-red font-bold uppercase text-[10px] tracking-[0.3em] mb-2 font-mono opacity-80">
-                                        // LOG_ENTRY_0{idx + 1}
-                                    </h4>
-                                    <h3 className="text-2xl font-black text-white mb-3 uppercase font-orbitron tracking-tighter leading-none">
-                                        {page.title}
-                                    </h3>
-                                    <p className="text-sm text-gray-400 font-medium leading-relaxed font-mono tracking-wide border-l-2 border-transparent group-hover:border-mission-red/50 pl-0 group-hover:pl-4 transition-all duration-300">
-                                        {/* eslint-disable-next-line react/no-unescaped-entities */}
-                                        {page.text}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="p-6 bg-black border-t border-white/10 shrink-0 text-center relative overflow-hidden">
-                            <div className="absolute inset-0 bg-repeat opacity-5" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'6\' height=\'6\' viewBox=\'0 0 6 6\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M5 0h1v1H5zM0 5h1v1H0z\'/%3E%3C/g%3E%3C/svg%3E")' }} />
-                            <button
-                                onClick={() => setShowStoryModal(false)}
-                                className="relative w-full py-4 bg-white/5 border border-white/10 text-white font-black uppercase tracking-[0.3em] rounded-xl active:scale-95 transition-all text-xs hover:bg-mission-red hover:border-mission-red hover:shadow-[0_0_30px_rgba(220,38,38,0.4)]"
-                            >
-                                CLOSE ARCHIVE
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* IMAGE PREVIEW OVERLAY (Full Screen) */}
             <AnimatePresence>

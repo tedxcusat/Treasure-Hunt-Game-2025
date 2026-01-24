@@ -33,6 +33,7 @@ export async function GET(request: Request) {
             // For simple demo, let's return Zone 1. 2, 3... based on some simple hash or just Zone 1.
             const zone = MOCK_ZONES[0];
             return NextResponse.json({
+                startTime: new Date().toISOString(), // Mock Start Time (Now)
                 zone: {
                     id: zone.id,
                     name: zone.name,
@@ -46,10 +47,10 @@ export async function GET(request: Request) {
         }
 
         // Supabase Mode
-        // Get Team Level & Sequence
+        // Get Team Level & Sequence & Start Time
         const { data: team, error: teamError } = await supabase
             .from('teams')
-            .select('current_level, zone_sequence')
+            .select('current_level, zone_sequence, created_at')
             .eq('id', teamId)
             .single();
 
@@ -81,6 +82,7 @@ export async function GET(request: Request) {
 
         // Sanitized Zone Data
         return NextResponse.json({
+            startTime: team.created_at, // Send Start Time
             zone: {
                 id: zone.id,
                 name: zone.name,
