@@ -447,6 +447,11 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                     zoomControl={false}
                     attributionControl={false}
                     className="z-0"
+                    // Mobile Zoom Fixes
+                    touchZoom="center"      // Ignores rotation-skewed touch anchors, zooms to center (stable)
+                    zoomSnap={0}           // Fluid zoom (not steps)
+                    zoomDelta={0.05}       // Micro-steps for smoothness
+                    wheelPxPerZoomLevel={120}
                 >
                     <TileLayer
                         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
