@@ -58,7 +58,6 @@ export default function GamePage() {
     // Game Flow State
     const [showChallenge, setShowChallenge] = useState(false); // Code Entry
     const [showLore, setShowLore] = useState(false); // Lore Question
-    // const [showStoryModal, setShowStoryModal] = useState(false); // MOVED TO /story PAGE
     const [inputCode, setInputCode] = useState('');
     const [challengeStatus, setChallengeStatus] = useState<'IDLE' | 'CHECKING' | 'SUCCESS' | 'ERROR'>('IDLE');
 
@@ -371,7 +370,7 @@ export default function GamePage() {
                         <button
                             onClick={() => {
                                 playSound('click');
-                                router.push('/story');
+                                router.push('/archive');
                             }}
                             className="pointer-events-auto w-12 h-12 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-blue-400"
                         >
@@ -613,7 +612,7 @@ export default function GamePage() {
                 </div>
             )}
 
-            {/* QUIT MODAL */}
+
             {showQuitModal && (
                 <div className="absolute inset-0 z-[100] bg-black/90 flex items-center justify-center p-6 backdrop-blur-sm">
                     <div className="w-full max-w-sm bg-white rounded-3xl p-6 text-center shadow-2xl pointer-events-auto">
