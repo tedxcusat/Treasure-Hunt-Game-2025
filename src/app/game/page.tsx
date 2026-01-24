@@ -92,7 +92,6 @@ export default function GamePage() {
 
     // Game Flow State
     const [showChallenge, setShowChallenge] = useState(false); // Code Entry
-    const [showLore, setShowLore] = useState(false); // Lore Question
     const [inputCode, setInputCode] = useState('');
     const [challengeStatus, setChallengeStatus] = useState<'IDLE' | 'CHECKING' | 'SUCCESS' | 'ERROR'>('IDLE');
 
@@ -175,13 +174,18 @@ export default function GamePage() {
 
             const data = await verifyRes.json();
 
-            if (data.message && data.message.includes("Zone Verified")) {
+            if (data.success) {
                 // Determine Success
                 setCapturedImage(null);
                 showToast("TARGET VERIFIED! EXCELLENT WORK.", 'success');
                 playSound('success');
-                // Trigger next phase
-                setTimeout(() => setShowLore(true), 2000);
+
+                if (data.completed) {
+                    setTimeout(() => router.push('/success'), 1000);
+                } else {
+                    // Refresh data for next zone
+                    setTimeout(() => fetchZoneData(teamId), 1000);
+                }
             } else {
                 showToast("VERIFICATION FAILED: TARGET NOT IDENTIFIED.", 'error');
                 playSound('error');
@@ -355,7 +359,6 @@ export default function GamePage() {
                     setShowChallenge(false);
                     setInputCode('');
                     setChallengeStatus('IDLE');
-                    setShowLore(true);
                 }, 1000);
             } else {
                 setChallengeStatus('ERROR');
@@ -368,28 +371,7 @@ export default function GamePage() {
         }
     };
 
-    const handleLoreAnswer = async (option: string) => {
-        if (!teamId) return;
 
-        try {
-            const res = await fetch('/api/lore', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ teamId, answer: option })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                showToast('CORRECT! ACCESSING NEXT ZONE DATA...', 'success');
-                setShowLore(false);
-                fetchZoneData(teamId); // Fetch Next Level
-            } else {
-                showToast('INCORRECT. TRY AGAIN.', 'error');
-            }
-        } catch (err) {
-            showToast('TRANSMISSION ERROR', 'error');
-        }
-    };
 
     // GPS Error State
     const [gpsError, setGpsError] = useState(false);
@@ -700,31 +682,7 @@ export default function GamePage() {
                 </div>
             )}
 
-            {/* LORE QUESTION MODAL */}
-            {showLore && currentZone && (
-                <div className="absolute inset-0 z-[100] bg-black/90 flex items-center justify-center p-6 backdrop-blur-sm">
-                    <div className="w-full max-w-sm bg-mission-dark border-2 border-mission-red shadow-2xl rounded-[2rem] p-8 text-center relative pointer-events-auto">
-                        <div className="bg-black w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-mission-red">
-                            <HelpCircle className="w-8 h-8 text-mission-red" />
-                        </div>
-                        <h3 className="text-xl font-black text-white mb-4 uppercase tracking-widest font-mission">DATA INTERCEPT</h3>
-                        <p className="text-sm text-gray-300 mb-6 font-mono leading-relaxed p-4 bg-black/50 rounded-xl border border-white/10">
-                            {currentZone.question}
-                        </p>
-                        <div className="grid grid-cols-1 gap-3">
-                            {currentZone.options.map((opt: string, idx: number) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleLoreAnswer(opt)}
-                                    className="w-full py-4 font-bold text-white bg-white/10 border border-white/5 rounded-xl hover:bg-mission-red hover:border-mission-red transition-all active:scale-95 text-sm uppercase tracking-wider"
-                                >
-                                    {opt}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
 
             {showQuitModal && (
