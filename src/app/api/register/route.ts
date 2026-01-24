@@ -27,7 +27,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // 1. Generate Unique 4-Digit Codes for Leader + 4 Members
+        // 1. Check if Team/Email already exists (Idempotency for Retries)
+        const { data: existingTeam } = await supabase
+            .from('teams')
+            .select('id, leader_verified_code, team_name')
+            .or(`team_name.eq.${teamName},leader_email.eq.${email}`)
+            .single();
+
+        if (existingTeam) {
+            // If team exists, return their code (Recover session)
+            console.log(`Recovering existing team: ${existingTeam.team_name}`);
+            return NextResponse.json({
+                success: true,
+                teamId: existingTeam.id,
+                accessCode: existingTeam.leader_verified_code,
+                message: 'Team already registered. retrieving details.'
+            });
+        }
+
+        // 2. Generate Unique 4-Digit Codes for Leader + 4 Members
         const generateCode = () => Math.floor(1000 + Math.random() * 9000).toString();
 
         // Generate a set of unique codes for this team
@@ -39,13 +57,13 @@ export async function POST(req: Request) {
         const leaderCode = codes[0];
         const memberCodes = codes.slice(1); // 4 codes for members
 
-        // 2. Generate Random Zone Sequence (1-6)
+        // 3. Generate Random Zone Sequence (1-6)
         const zones = [1, 2, 3, 4, 5, 6];
         const shuffledZones = shuffleArray([...zones]);
         const startZone = shuffledZones[0];
         const remainingZones = shuffledZones.slice(1);
 
-        // 3. Prepare Payload
+        // 4. Prepare Payload
         const payload: any = {
             team_name: teamName,
             leader_name: leaderName,
@@ -73,7 +91,7 @@ export async function POST(req: Request) {
             game_start_time: new Date().toISOString()
         };
 
-        // 4. Insert into DB
+        // 5. Insert into DB
         const { data: team, error } = await supabase
             .from('teams')
             .insert(payload)
@@ -82,25 +100,32 @@ export async function POST(req: Request) {
 
         if (error) {
             console.error('Registration DB Error:', error);
+            // Fallback collision check
             if (error.code === '23505') {
-                throw new Error('Team Name or Email already exists.');
+                return NextResponse.json({ error: 'Team Name or Email already exists. Please login.' }, { status: 400 });
             }
             throw new Error(error.message);
         }
 
-        // 5. Send Individual Emails
-        const recipients = [
-            { email: email, code: leaderCode },
-            ...members.map((m: string, i: number) => ({ email: m, code: memberCodes[i] }))
-        ].filter(r => r.email); // Filter out undefined emails
+        // 6. Send Individual Emails (Best Effort)
+        try {
+            const recipients = [
+                { email: email, code: leaderCode },
+                ...members.map((m: string, i: number) => ({ email: m, code: memberCodes[i] }))
+            ].filter(r => r.email);
 
-        await sendTeamCode(recipients, teamName);
+            // Don't await strictly if performance is issue, but Vercel freezes lambda.
+            // We await but catch error so we return success to user regardless.
+            await sendTeamCode(recipients, teamName);
+        } catch (emailErr) {
+            console.error("Email sending failed (non-critical):", emailErr);
+        }
 
-        // 6. Return Success
+        // 7. Return Success
         return NextResponse.json({
             success: true,
             teamId: team.id,
-            leaderCode: leaderCode // Optional: return leader code for immediate verify
+            accessCode: leaderCode
         });
 
     } catch (error: any) {
