@@ -29,18 +29,30 @@ export async function POST(request: Request) {
         // SUPABASE MODE
         const { data: team, error } = await supabase
             .from('teams')
-            .select('id, name')
-            .eq('access_code', accessCode)
+            .select('*')
+            .or(`leader_verified_code.eq.${accessCode},member1_verified_code.eq.${accessCode},member2_verified_code.eq.${accessCode},member3_verified_code.eq.${accessCode},member4_verified_code.eq.${accessCode}`)
             .single();
 
         if (error || !team) {
             return NextResponse.json({ error: 'Invalid Access Code' }, { status: 401 });
         }
 
+        // Determine Role & Update Active Status
+        let updateColumn = null;
+        if (team.leader_verified_code === accessCode) updateColumn = 'leader_is_active';
+        else if (team.member1_verified_code === accessCode) updateColumn = 'member1_is_active';
+        else if (team.member2_verified_code === accessCode) updateColumn = 'member2_is_active';
+        else if (team.member3_verified_code === accessCode) updateColumn = 'member3_is_active';
+        else if (team.member4_verified_code === accessCode) updateColumn = 'member4_is_active';
+
+        if (updateColumn) {
+            await supabase.from('teams').update({ [updateColumn]: true }).eq('id', team.id);
+        }
+
         return NextResponse.json({
             success: true,
             teamId: team.id,
-            name: team.name
+            name: team.team_name
         });
 
     } catch (error: any) {

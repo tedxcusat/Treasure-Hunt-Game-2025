@@ -92,6 +92,7 @@ export default function Home() {
     // Success - Save Session
     localStorage.setItem('teamId', data.id);
     localStorage.setItem('teamName', data.team_name);
+    localStorage.setItem('accessCode', enteredCode);
 
     // Check if story already seen
     const hasSeenStory = localStorage.getItem(`story_seen_${data.id}`);
@@ -108,6 +109,11 @@ export default function Home() {
 
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center gap-10">
+
+        {/* Chrome Warning */}
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+          ⚠️ USE CHROME FOR BEST EXPERIENCE
+        </div>
 
         {/* Logo Section */}
         <div className="flex flex-col items-center gap-4">

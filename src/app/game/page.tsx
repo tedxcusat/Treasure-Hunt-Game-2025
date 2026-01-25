@@ -168,6 +168,28 @@ export default function GamePage() {
         }
     };
 
+    const handleQuitConfirm = async () => {
+        playSound('click');
+        if (teamId) {
+            const code = localStorage.getItem('accessCode');
+            if (code) {
+                // Best effort API call
+                try {
+                    await fetch('/api/quit', {
+                        method: 'POST',
+                        body: JSON.stringify({ teamId, accessCode: code })
+                    });
+                } catch (e) {
+                    console.error("Quit API Failed:", e);
+                }
+            }
+        }
+        localStorage.removeItem('teamId');
+        localStorage.removeItem('teamName');
+        localStorage.removeItem('accessCode');
+        router.push('/quit');
+    };
+
     const downloadImage = () => {
         if (!capturedImage) return;
         const link = document.createElement('a');
@@ -556,14 +578,16 @@ export default function GamePage() {
                                         onClick={async () => {
                                             playSound('click');
                                             // iOS Safari requires a direct user interaction to prompt for camera.
-                                            // We request it here (before mounting ARView) to "prime" the permission.
+                                            // We request it here to "prime" the permission, then IMMEDIATELY RELEASE it
+                                            // so AR.js can claim the hardware without "Device Busy" errors.
                                             try {
                                                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                                                    await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                                                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                                                    // Critical: Stop the stream immediately to free hardware for AR.js
+                                                    stream.getTracks().forEach(track => track.stop());
                                                 }
                                             } catch (err) {
                                                 console.warn("Camera permission pre-check failed:", err);
-                                                // We still continue to AR view, as AR.js might handle it or show fallback
                                             }
                                             setViewMode('AR');
                                         }}
@@ -819,7 +843,7 @@ export default function GamePage() {
                         <h3 className="text-2xl font-black text-black mb-2 uppercase">ABORT MISSION?</h3>
                         <p className="text-sm text-gray-500 mb-8 font-medium">Progress will be lost.</p>
                         <div className="space-y-3">
-                            <button onClick={() => { playSound('click'); router.push('/quit'); }} className="w-full py-4 font-black text-white bg-mission-red rounded-xl shadow-lg active:scale-95">YES, QUIT</button>
+                            <button onClick={handleQuitConfirm} className="w-full py-4 font-black text-white bg-mission-red rounded-xl shadow-lg active:scale-95">YES, QUIT</button>
                             <button onClick={() => { playSound('click'); setShowQuitModal(false); }} className="w-full py-4 font-bold text-gray-600 bg-gray-100 rounded-xl">CANCEL</button>
                         </div>
                     </div>
