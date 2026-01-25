@@ -119,11 +119,14 @@ export async function POST(req: Request) {
                 ...members.map((m: string, i: number) => ({ email: m, code: memberCodes[i] }))
             ].filter(r => r.email);
 
-            // Don't await strictly if performance is issue, but Vercel freezes lambda.
-            // We await but catch error so we return success to user regardless.
-            // UPDATE: Removing await to fix "Fetch Failed" timeout on mobile. 
-            // Vercel might kill this, but UI success > Email success.
-            sendTeamCode(recipients, teamName).catch(err => console.error("Background Email Error:", err));
+            // 6. Send Individual Emails
+            // We await this to ensure Vercel doesn't kill the process before SMTP completes.
+            // Typical duration: 2-4 seconds.
+            try {
+                await sendTeamCode(recipients, teamName);
+            } catch (err) {
+                console.error("Background Email Error (Non-blocking):", err);
+            }
         } catch (emailErr) {
             console.error("Email sending failed (non-critical):", emailErr);
         }

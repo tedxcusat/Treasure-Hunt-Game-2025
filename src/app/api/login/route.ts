@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
-    console.log("🟢 LOGIN API CALLED");
-    console.log("ENV CHECK - SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "MISSING");
-
     try {
         const body = await request.json();
         const { accessCode } = body;
