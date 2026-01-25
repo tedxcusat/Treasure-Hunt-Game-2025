@@ -252,12 +252,15 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
                         const coordinates = data.routes[0].geometry.coordinates.map((coord: number[]) => [coord[1], coord[0]] as [number, number]);
                         setRoutePath(coordinates);
                         lastFetchedLoc.current = userLoc; // Update reference point
+                    } else {
+                        // Fallback: Straight Line
+                        console.warn("OSRM No Route - Using Direct Line");
+                        setRoutePath([[jitteredTarget.lat, jitteredTarget.lng]]);
                     }
-                    // Note: If API fails/returns no routes, we intentionally DO NOT clear the old route.
-                    // This prevents "blinking" or disappearing routes during temporary glitches.
                 } catch (err) {
                     console.error("Routing Error:", err);
-                    // Silent fail - keep existing route
+                    // Fallback: Straight Line
+                    setRoutePath([[jitteredTarget.lat, jitteredTarget.lng]]);
                 }
             };
 
