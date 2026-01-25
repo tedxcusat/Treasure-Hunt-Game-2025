@@ -44,7 +44,7 @@ export default function RootLayout({
         </div>
 
         {/* Mobile Frame Container */}
-        <main className="relative z-10 w-full md:max-w-[400px] md:h-[850px] md:rounded-[3rem] md:border-[8px] md:border-zinc-800 md:shadow-2xl overflow-hidden bg-background h-screen">
+        <main className="relative z-10 w-full md:max-w-[400px] md:h-[850px] md:rounded-[3rem] md:border-[8px] md:border-zinc-800 md:shadow-2xl bg-background min-h-screen md:overflow-hidden">
           {children}
         </main>
       </body>

@@ -104,7 +104,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative h-full flex flex-col items-center justify-center p-6 text-center bg-white text-black font-clash">
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center bg-white text-black font-clash py-10">
 
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center gap-10">
