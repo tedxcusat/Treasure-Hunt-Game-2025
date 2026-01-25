@@ -18,7 +18,12 @@ function shuffleArray<T>(array: T[]): T[] {
 
 import { sendTeamCode } from '@/lib/email';
 
+
 export async function POST(req: Request) {
+    console.log("🟢 REGISTER API - VERCEL REDEPLOY TRIGGER");
+    console.log("ENV CHECK - SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "MISSING");
+    console.log("ENV CHECK - GMAIL:", process.env.GMAIL_USER ? "SET" : "MISSING");
+
     try {
         const body = await req.json();
         const { teamName, leaderName, email, phone, members } = body; // members is array of strings (names)
