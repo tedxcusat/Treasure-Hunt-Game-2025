@@ -553,8 +553,18 @@ export default function GamePage() {
                                     className="flex flex-col items-center gap-2 mr-4 mb-4"
                                 >
                                     <motion.button
-                                        onClick={() => {
+                                        onClick={async () => {
                                             playSound('click');
+                                            // iOS Safari requires a direct user interaction to prompt for camera.
+                                            // We request it here (before mounting ARView) to "prime" the permission.
+                                            try {
+                                                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                                                    await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                                                }
+                                            } catch (err) {
+                                                console.warn("Camera permission pre-check failed:", err);
+                                                // We still continue to AR view, as AR.js might handle it or show fallback
+                                            }
                                             setViewMode('AR');
                                         }}
                                         whileHover="hover"
