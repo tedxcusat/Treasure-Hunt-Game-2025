@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Plus, Trash2, ArrowLeft, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Register() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
     const [formData, setFormData] = useState({
         teamName: '',
         leaderName: '',
@@ -36,28 +39,33 @@ export default function Register() {
         }
     };
 
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
     const handleSubmit = async () => {
         // Basic Validation
         if (!formData.teamName || !formData.leaderName || !formData.email) {
-            alert('Please fill all team leader details.');
+            showToast('Please fill all team leader details.', 'error');
             return;
         }
 
         // Email Validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            alert('Please enter a valid LEADER email address.');
+            showToast('Please enter a valid LEADER email address.', 'error');
             return;
         }
 
         // Validate Member Emails
         for (let i = 0; i < formData.members.length; i++) {
             if (!formData.members[i].trim()) {
-                alert(`Please fill Operative ${i + 1} email.`);
+                showToast(`Please fill Operative ${i + 1} email.`, 'error');
                 return;
             }
             if (!emailRegex.test(formData.members[i])) {
-                alert(`Invalid email for Operative ${i + 1}.`);
+                showToast(`Invalid email for Operative ${i + 1}.`, 'error');
                 return;
             }
         }
@@ -73,12 +81,16 @@ export default function Register() {
 
             if (!res.ok) throw new Error(data.error);
 
-            // Success - Show Code (Demo Mode)
-            alert(`SUCCESS! TEAM REGISTERED.\n\nYour Access Code: ${data.accessCode}\n\n(This has been sent to ${formData.email})`);
+            // Success - CLEANER UI (No Code shown)
+            showToast('REGISTRATION SUCCESSFUL. CHECK EMAIL.', 'success');
 
-            router.push('/');
+            // Wait a bit before redirect so they see the toast
+            setTimeout(() => {
+                router.push('/');
+            }, 2000);
+
         } catch (err: any) {
-            alert('REGISTRATION FAILED: ' + err.message);
+            showToast('REGISTRATION FAILED: ' + err.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -86,6 +98,32 @@ export default function Register() {
 
     return (
         <div className="min-h-screen bg-white text-black p-6 font-clash flex flex-col items-center overflow-y-auto relative">
+
+            {/* TOAST NOTIFICATION CONTAINER */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        className="fixed top-6 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none"
+                    >
+                        <div className={`
+                            pointer-events-auto
+                            flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md
+                            ${toast.type === 'success' ? 'bg-green-900/90 border-green-500/50 text-white' : ''}
+                            ${toast.type === 'error' ? 'bg-red-900/90 border-red-500/50 text-white' : ''}
+                            ${toast.type === 'info' ? 'bg-gray-900/90 border-gray-500/50 text-white' : ''}
+                        `}>
+                            {toast.type === 'success' && <div className="p-1 bg-green-500 rounded-full"><CheckCircle className="w-5 h-5 text-black" strokeWidth={3} /></div>}
+                            {toast.type === 'error' && <div className="p-1 bg-red-500 rounded-full"><X className="w-5 h-5 text-white" strokeWidth={3} /></div>}
+                            {toast.type === 'info' && <div className="p-1 bg-gray-500 rounded-full"><AlertTriangle className="w-5 h-5 text-white" strokeWidth={3} /></div>}
+
+                            <span className="font-bold font-orbitron tracking-wide text-sm">{toast.message}</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Back Button */}
             <button

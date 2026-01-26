@@ -34,3 +34,7 @@ SET
   clues = EXCLUDED.clues,
   question = EXCLUDED.question,
   options = EXCLUDED.options;
+
+-- FIX: Enable UPDATE Access for Teams (Member Login)
+DROP POLICY IF EXISTS "Enable update for all" ON teams;
+CREATE POLICY "Enable update for all" ON teams FOR UPDATE USING (true);

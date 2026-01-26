@@ -233,6 +233,11 @@ export default function GamePage() {
                 return;
             }
 
+            if (data.aborted) {
+                router.push('/quit');
+                return;
+            }
+
             if (data.zone) {
                 setCurrentZone(data.zone);
                 setViewMode('MAP');

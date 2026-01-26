@@ -39,11 +39,21 @@ export async function POST(request: Request) {
 
         // Determine Role & Update Active Status
         let updateColumn = null;
-        if (team.leader_verified_code === accessCode) updateColumn = 'leader_is_active';
-        else if (team.member1_verified_code === accessCode) updateColumn = 'member1_is_active';
-        else if (team.member2_verified_code === accessCode) updateColumn = 'member2_is_active';
-        else if (team.member3_verified_code === accessCode) updateColumn = 'member3_is_active';
-        else if (team.member4_verified_code === accessCode) updateColumn = 'member4_is_active';
+        if (String(team.leader_verified_code) === String(accessCode)) {
+            updateColumn = 'leader_is_active';
+        }
+        else if (String(team.member1_verified_code) === String(accessCode)) {
+            updateColumn = 'member1_is_active';
+        }
+        else if (String(team.member2_verified_code) === String(accessCode)) {
+            updateColumn = 'member2_is_active';
+        }
+        else if (String(team.member3_verified_code) === String(accessCode)) {
+            updateColumn = 'member3_is_active';
+        }
+        else if (String(team.member4_verified_code) === String(accessCode)) {
+            updateColumn = 'member4_is_active';
+        }
 
         if (updateColumn) {
             await supabase.from('teams').update({ [updateColumn]: true }).eq('id', team.id);
