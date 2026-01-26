@@ -641,31 +641,26 @@ export default function GamePage() {
                 {/* CAPTURE REVIEW OVERLAY */}
                 {capturedImage && (
                     <div className="absolute inset-0 z-[80] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 pointer-events-auto">
-                        <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden border-2 border-mission-red shadow-[0_0_30px_rgba(220,38,38,0.5)] bg-black">
+                        <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden border-2 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.5)] bg-black">
                             {/* HUD CORNERS */}
-                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-mission-red z-20" />
-                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-mission-red z-20" />
-                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-mission-red z-20" />
-                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-mission-red z-20" />
-
-                            {/* SCAN LINE ANIMATION (Always visible or conditional?) User wants "scanning ui inside this". */}
-                            {/* Let's make it always visible for effect, or only when verifying? user said "scanning ui inside this". */}
-                            {/* The original ScanningOverlay had moving scanline. I'll add it back here, visible when verifying OR always? */}
-                            {/* Usually scanning happens during verification. */}
+                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-500 z-20" />
+                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-500 z-20" />
+                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500 z-20" />
+                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500 z-20" />
 
                             {/* Grid Pattern & Scan Line - Visible only when VERIFYING */}
                             {verifying && (
                                 <>
-                                    <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.2)_1px,transparent_1px)] bg-[size:20px_20px] z-20 pointer-events-none" />
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-mission-red shadow-[0_0_20px_rgba(220,38,38,1)] animate-[scan_2s_linear_infinite] z-20 pointer-events-none" />
+                                    <div className="absolute inset-0 bg-[linear-gradient(rgba(34,197,94,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.2)_1px,transparent_1px)] bg-[size:20px_20px] z-20 pointer-events-none" />
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-green-500 shadow-[0_0_20px_rgba(34,197,94,1)] animate-[scan_2s_linear_infinite] z-20 pointer-events-none" />
                                     <div className="absolute inset-0 flex items-center justify-center z-30">
-                                        <p className="text-mission-red font-mono text-lg tracking-widest animate-pulse font-bold bg-black/50 px-4 py-1 backdrop-blur-sm">ANALYZING BIOMETRICS...</p>
+                                        <p className="text-green-500 font-mono text-lg tracking-widest animate-pulse font-bold bg-black/50 px-4 py-1 backdrop-blur-sm">ANALYZING BIOMETRICS...</p>
                                     </div>
                                 </>
                             )}
 
                             {/* Standard Static Scan Element (Always there for style) */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-mission-red/5 to-transparent z-10 pointer-events-none" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent z-10 pointer-events-none" />
 
                             <img src={capturedImage} alt="Capture" className="w-full h-full object-cover opacity-80" />
 
@@ -700,7 +695,7 @@ export default function GamePage() {
                                         handleVerify();
                                     }}
                                     disabled={verifying}
-                                    className="w-full h-14 bg-mission-red text-white font-black text-lg uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-red-600 border border-white/20"
+                                    className="w-full h-14 bg-green-600 text-white font-black text-lg uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(34,197,94,0.6)] flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-green-500 border border-white/20"
                                 >
                                     {verifying ? (
                                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -713,7 +708,7 @@ export default function GamePage() {
                                 </button>
                             </div>
                         </div>
-                        <p className="text-mission-red font-mono text-xs mt-4 animate-pulse uppercase tracking-[0.2em]">CONFIRM TARGET DATA INTEGRITY</p>
+                        <p className="text-green-500 font-mono text-xs mt-4 animate-pulse uppercase tracking-[0.2em]">CONFIRM TARGET DATA INTEGRITY</p>
                     </div>
                 )}
 
