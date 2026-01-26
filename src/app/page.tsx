@@ -3,13 +3,21 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const [code, setCode] = useState(['', '', '', '']);
   const [teamName, setTeamName] = useState('');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handleCodeChange = (index: number, value: string) => {
     // Only allow digits
@@ -45,7 +53,7 @@ export default function Home() {
     }
 
     if (enteredCode.length !== 4 || !teamName.trim()) {
-      alert('Please enter Squad Name and Code.');
+      showToast('PLEASE ENTER SQUAD NAME AND CODE.', 'error');
       return;
     }
 
@@ -60,7 +68,7 @@ export default function Home() {
       .single();
 
     if (error || !team) {
-      alert('TEAM NOT FOUND. CHECK SPELLING.');
+      showToast('TEAM NOT FOUND. CHECK SPELLING.', 'error');
       setLoading(false);
       return;
     }
@@ -75,7 +83,7 @@ export default function Home() {
     ];
 
     if (!validCodes.includes(enteredCode)) {
-      alert('INVALID ACCESS CODE FOR THIS TEAM.');
+      showToast('INVALID ACCESS CODE FOR THIS TEAM.', 'error');
       setLoading(false);
       return;
     }
@@ -109,7 +117,7 @@ export default function Home() {
     const data = team;
 
     if (error || !data) {
-      alert('ACCESS DENIED: INVALID NAME OR CODE');
+      showToast('ACCESS DENIED: INVALID NAME OR CODE', 'error');
       setLoading(false);
       return;
     }
@@ -119,18 +127,49 @@ export default function Home() {
     localStorage.setItem('teamName', data.team_name);
     localStorage.setItem('accessCode', enteredCode);
 
+    // Trigger Logged In Toast
+    showToast('ACCESS GRANTED. UPLINK ESTABLISHED.', 'success');
+
     // Check if story already seen
     const hasSeenStory = localStorage.getItem(`story_seen_${data.id}`);
 
-    if (hasSeenStory) {
-      router.push('/game');
-    } else {
-      router.push('/story');
-    }
+    setTimeout(() => {
+      if (hasSeenStory) {
+        router.push('/game');
+      } else {
+        router.push('/story');
+      }
+    }, 1500);
   };
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center bg-white text-black font-clash py-10">
+
+      {/* TOAST NOTIFICATION CONTAINER */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="fixed top-6 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none"
+          >
+            <div className={`
+                            pointer-events-auto
+                            flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md
+                            ${toast.type === 'success' ? 'bg-green-900/90 border-green-500/50 text-white' : ''}
+                            ${toast.type === 'error' ? 'bg-red-900/90 border-red-500/50 text-white' : ''}
+                            ${toast.type === 'info' ? 'bg-gray-900/90 border-gray-500/50 text-white' : ''}
+                        `}>
+              {toast.type === 'success' && <div className="p-1 bg-green-500 rounded-full"><CheckCircle className="w-5 h-5 text-black" strokeWidth={3} /></div>}
+              {toast.type === 'error' && <div className="p-1 bg-red-500 rounded-full"><X className="w-5 h-5 text-white" strokeWidth={3} /></div>}
+              {toast.type === 'info' && <div className="p-1 bg-gray-500 rounded-full"><AlertTriangle className="w-5 h-5 text-white" strokeWidth={3} /></div>}
+
+              <span className="font-bold font-orbitron tracking-wide text-sm">{toast.message}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center gap-10">

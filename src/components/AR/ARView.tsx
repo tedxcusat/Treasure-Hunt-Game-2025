@@ -61,10 +61,15 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                 video.muted = true;
 
                 // We keep it in the DOM but make it effectively invisible and non-interactive
-                video.style.opacity = '0';
-                video.style.zIndex = '-9999';
-                video.style.position = 'fixed';
-                video.style.pointerEvents = 'none';
+                // Video setup for proper display
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                // video.muted = true; // Loop/Autoplay usually requires muted
+
+                // Ensure it's visible but behind UI
+                video.style.opacity = '1';
+                video.style.zIndex = '0';
+                video.style.objectFit = 'cover';
             });
         };
 
@@ -93,12 +98,19 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
             {/* Canvas Styling & Nuclear Video Fix */}
             <style jsx global>{`
                 /* Hide the raw video element created by AR.js attached to body */
+                /* Ensure video covers the screen without stretching */
                 body > video {
-                    opacity: 0 !important;
-                    z-index: -9999 !important;
+                    opacity: 1 !important;
+                    z-index: 0 !important;
                     position: fixed !important;
-                    pointer-events: none !important;
-                    /* Do not change width/height or display, let it run in background */
+                    top: 50% !important;
+                    left: 50% !important;
+                    min-width: 100%;
+                    min-height: 100%;
+                    width: auto !important;
+                    height: auto !important;
+                    transform: translate(-50%, -50%);
+                    object-fit: cover !important;
                 }
                 
                 #arjs-video {

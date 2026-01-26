@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         // Get Team Data (Use 'current_zone' directly as it stores the actual ID now)
         const { data: team, error: teamError } = await supabase
             .from('teams')
-            .select('current_zone, game_start_time')
+            .select('current_zone, game_start_time, game_end_time, remaining_zones')
             .eq('id', teamId)
             .single();
 
@@ -57,6 +57,18 @@ export async function GET(request: Request) {
         if (teamError || !team) {
             console.error('Supabase Error Details:', teamError);
             throw new Error(`Team not found. DB Error: ${teamError?.message} (${teamError?.code})`);
+        }
+
+        // CHECK GAME STATUS
+        if (team.game_end_time) {
+            // Game is stopped.
+            const isVictory = !team.remaining_zones || team.remaining_zones.length === 0;
+            return NextResponse.json({
+                completed: isVictory,
+                aborted: !isVictory,
+                startTime: team.game_start_time,
+                endTime: team.game_end_time
+            });
         }
 
         // Determine Actual Zone ID (Directly from DB now)

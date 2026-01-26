@@ -35,18 +35,33 @@ export async function POST(req: Request) {
         // 1. Check if Team/Email already exists (Idempotency for Retries)
         const { data: existingTeam } = await supabase
             .from('teams')
-            .select('id, leader_verified_code, team_name')
+            .select('*')
             .or(`team_name.eq.${teamName},leader_email.eq.${email}`)
             .single();
 
         if (existingTeam) {
-            // If team exists, return their code (Recover session)
-            // If team exists, return their code (Recover session)
+            console.log("⚠️ Team already exists. Resending credentials.");
+
+            // Resend Emails to be safe (Fix for 'Mobile Success but No Email' issue)
+            const recipients = [
+                { email: existingTeam.leader_email, code: existingTeam.leader_verified_code },
+                { email: existingTeam.member1_email, code: existingTeam.member1_verified_code },
+                { email: existingTeam.member2_email, code: existingTeam.member2_verified_code },
+                { email: existingTeam.member3_email, code: existingTeam.member3_verified_code },
+                { email: existingTeam.member4_email, code: existingTeam.member4_verified_code },
+            ].filter(r => r.email); // Filter out nulls
+
+            try {
+                await sendTeamCode(recipients, existingTeam.team_name);
+            } catch (err) {
+                console.error("Resend Email Error:", err);
+            }
+
             return NextResponse.json({
                 success: true,
                 teamId: existingTeam.id,
                 accessCode: existingTeam.leader_verified_code,
-                message: 'Team already registered. retrieving details.'
+                message: 'Team already registered. Credentials resent.'
             });
         }
 
