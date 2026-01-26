@@ -57,9 +57,19 @@ export async function POST(req: Request) {
         const data = await backendRes.json();
         console.log('Verification Result:', data);
 
-        // 4. Game Progression Logic (Supabase)
-        // If verification was successful (assume backend returns success or 200 OK means success)
+        // 4. Check Verification Status - Only proceed if status is "same"
+        // Response structure: { status: "same" | "different", zone_id, identified_object, confidence_score }
+        if (data.status !== 'same') {
+            console.log(`Verification failed: status=${data.status}, confidence=${data.confidence_score}`);
+            return NextResponse.json({ 
+                success: false, 
+                message: `Object verification failed. Status: ${data.status || 'unknown'}`,
+                confidence_score: data.confidence_score,
+                identified_object: data.identified_object
+            }, { status: 400 });
+        }
 
+        // 5. Game Progression Logic (Supabase) - Only reached if status === "same"
         let updates: any = {};
         let nextZoneId = null;
 
@@ -100,7 +110,9 @@ export async function POST(req: Request) {
             success: true,
             message: 'Zone Verified',
             completed: !nextZoneId,
-            nextZone: nextZoneId
+            nextZone: nextZoneId,
+            identified_object: data.identified_object,
+            confidence_score: data.confidence_score
         });
 
     } catch (error: any) {
