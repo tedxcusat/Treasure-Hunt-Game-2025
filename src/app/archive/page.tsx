@@ -1,13 +1,56 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, X, ChevronLeft } from 'lucide-react';
+import { BookOpen, X, ChevronLeft, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { STORY_PAGES } from '@/lib/storyData';
 import { useSound } from '@/hooks/useSound';
+
+interface ClueImage {
+    name: string;
+    path: string;
+}
+
+interface ArchiveClue {
+    number: number;
+    text: string;
+    images: ClueImage[];
+}
 
 export default function ArchivePage() {
     const router = useRouter();
     const { playSound } = useSound();
+    const [unlockedClues, setUnlockedClues] = useState<ArchiveClue[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchUnlockedClues();
+    }, []);
+
+    const fetchUnlockedClues = async () => {
+        try {
+            const teamId = localStorage.getItem('teamId');
+            if (!teamId) {
+                setLoading(false);
+                return;
+            }
+
+            const res = await fetch(`/api/archive?teamId=${teamId}`);
+            const data = await res.json();
+
+            if (data.success && data.clues) {
+                setUnlockedClues(data.clues);
+            }
+        } catch (error) {
+            console.error('Error fetching clues:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleImageClick = (imagePath: string) => {
+        window.open(imagePath, '_blank');
+    };
 
     return (
         <div className="h-[100dvh] w-full bg-black flex flex-col font-sans overflow-hidden">
@@ -30,6 +73,7 @@ export default function ArchivePage() {
 
             {/* Content Scroll */}
             <div className="flex-1 overflow-y-auto p-8 space-y-16 scrollbar-hide pb-32">
+                {/* Original Story Pages */}
                 {STORY_PAGES.map((page, idx) => (
                     <div key={idx} className="relative pl-8 border-l border-dashed border-white/20 group animate-in slide-in-from-bottom-8 fade-in duration-700" style={{ animationDelay: `${idx * 100}ms` }}>
                         {/* Animated Timeline Node */}
@@ -46,6 +90,55 @@ export default function ArchivePage() {
                         </p>
                     </div>
                 ))}
+
+                {/* Unlocked Mission Clues */}
+                {loading ? (
+                    <div className="relative pl-8 border-l border-dashed border-white/20">
+                        <div className="text-mission-red font-mono text-sm animate-pulse">LOADING ARCHIVE...</div>
+                    </div>
+                ) : unlockedClues.length > 0 ? (
+                    unlockedClues.map((clue, idx) => (
+                        <div key={clue.number} className="relative pl-8 border-l border-dashed border-green-500/50 group animate-in slide-in-from-bottom-8 fade-in duration-700" style={{ animationDelay: `${(STORY_PAGES.length + idx) * 100}ms` }}>
+                            {/* Animated Timeline Node */}
+                            <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 bg-black border border-green-500 rounded-full group-hover:bg-green-500 group-hover:shadow-[0_0_10px_#22c55e] transition-all duration-500" />
+
+                            <h4 className="text-green-500 font-bold uppercase text-xs tracking-[0.3em] mb-3 font-mono opacity-80">
+                                // CLUE_{clue.number.toString().padStart(2, '0')}
+                            </h4>
+                            <p className="text-base text-gray-300 font-medium leading-relaxed font-mono tracking-wide border-l-2 border-transparent group-hover:border-green-500/50 pl-0 group-hover:pl-4 transition-all duration-300 whitespace-pre-line">
+                                {clue.text}
+                            </p>
+
+                            {/* Images Section */}
+                            {clue.images && clue.images.length > 0 && (
+                                <div className="mt-4 space-y-2">
+                                    {clue.images.map((image, imgIdx) => (
+                                        <button
+                                            key={imgIdx}
+                                            onClick={() => {
+                                                playSound('click');
+                                                handleImageClick(image.path);
+                                            }}
+                                            className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-black/40 border border-green-500/30 rounded-lg hover:bg-green-500/10 hover:border-green-500/50 transition-all group"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <ImageIcon className="w-5 h-5 text-green-500 group-hover:text-green-400" />
+                                                <span className="text-sm text-gray-300 font-mono group-hover:text-white">
+                                                    {image.name}
+                                                </span>
+                                            </div>
+                                            <ExternalLink className="w-4 h-4 text-green-500/50 group-hover:text-green-400" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))
+                ) : (
+                    <div className="relative pl-8 border-l border-dashed border-white/20">
+                        <p className="text-gray-500 font-mono text-sm">No clues unlocked yet. Complete zones to unlock diary entries.</p>
+                    </div>
+                )}
 
                 {/* Spacer for bottom safe area */}
                 <div className="h-10" />

@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         // 1. Fetch Team State - Get the zone assigned to this team from database
         const { data: team, error: teamError } = await supabase
             .from('teams')
-            .select('current_zone, remaining_zones')
+            .select('current_zone, remaining_zones, unlocked_clues_count')
             .eq('id', teamId)
             .single();
 
@@ -69,8 +69,14 @@ export async function POST(req: Request) {
             }, { status: 400 });
         }
 
-        // 5. Game Progression Logic (Supabase) - Only reached if status === "same"
-        let updates: any = {};
+        // 5. Unlock Next Clue (Sequential: clue_1, clue_2, etc. regardless of zone order)
+        const currentClueCount = team.unlocked_clues_count || 0;
+        const nextClueNumber = currentClueCount + 1;
+
+        // 6. Game Progression Logic (Supabase) - Only reached if status === "same"
+        let updates: any = {
+            unlocked_clues_count: nextClueNumber // Unlock the next clue
+        };
         let nextZoneId = null;
 
         if (team.remaining_zones && team.remaining_zones.length > 0) {
@@ -78,15 +84,11 @@ export async function POST(req: Request) {
             nextZoneId = team.remaining_zones[0];
             const newRemaining = team.remaining_zones.slice(1);
 
-            updates = {
-                current_zone: nextZoneId,
-                remaining_zones: newRemaining
-            };
+            updates.current_zone = nextZoneId;
+            updates.remaining_zones = newRemaining;
         } else {
             // NO ZONES LEFT -> VICTORY
-            updates = {
-                game_end_time: new Date().toISOString()
-            };
+            updates.game_end_time = new Date().toISOString();
         }
 
         // Update DB

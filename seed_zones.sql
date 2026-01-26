@@ -38,3 +38,6 @@ SET
 -- FIX: Enable UPDATE Access for Teams (Member Login)
 DROP POLICY IF EXISTS "Enable update for all" ON teams;
 CREATE POLICY "Enable update for all" ON teams FOR UPDATE USING (true);
+
+-- 3. Add unlocked_clues_count column to teams table (for Mission Archive system)
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS unlocked_clues_count INTEGER DEFAULT 0;

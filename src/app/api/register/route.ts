@@ -108,7 +108,8 @@ export async function POST(req: Request) {
             current_zone: startZone,
             remaining_zones: remainingZones,
 
-            game_start_time: new Date().toISOString()
+            game_start_time: new Date().toISOString(),
+            unlocked_clues_count: 0 // Initialize clue counter
         };
 
         // 5. Insert into DB
