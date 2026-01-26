@@ -26,17 +26,6 @@ export const MOCK_ZONES = [
     },
     {
         id: 3,
-        name: 'School of Mgmt. Studies (SMS)',
-        lat: 10.0409,
-        lng: 76.3284,
-        code: DUMMY_CODE,
-        question: "This building is located next to which major landmark?",
-        answer: "Main Circle",
-        options: ["Main Circle", "Library", "Canteen", "Hostel"],
-        clue: "Where future leaders are forged. It stands proud next to the Main Circle."
-    },
-    {
-        id: 4,
         name: 'Butterfly Park',
         lat: 10.0425,
         lng: 76.3256,
@@ -47,18 +36,18 @@ export const MOCK_ZONES = [
         clue: "Nature's winged beauty thrives here. Seek the green space near the Dept. of Applied Chemistry."
     },
     {
-        id: 5,
-        name: 'CITTIC',
-        lat: 10.0435,
-        lng: 76.3242,
+        id: 4,
+        name: 'School of Mgmt. Studies (SMS)',
+        lat: 10.0409,
+        lng: 76.3284,
         code: DUMMY_CODE,
-        question: "CITTIC is the center for?",
-        answer: "Innovation",
-        options: ["Innovation", "Administration", "Recreation", "Examination"],
-        clue: "Where ideas are born and startups rise. Located near the Guest House."
+        question: "This building is located next to which major landmark?",
+        answer: "Main Circle",
+        options: ["Main Circle", "Library", "Canteen", "Hostel"],
+        clue: "Where future leaders are forged. It stands proud next to the Main Circle."
     },
     {
-        id: 6,
+        id: 5,
         name: 'Amenity Centre',
         lat: 10.0436,
         lng: 76.3235,
@@ -67,5 +56,16 @@ export const MOCK_ZONES = [
         answer: "University Road",
         options: ["University Road", "Highway", "Main Ave", "Back Lane"],
         clue: "A place for goods and gathering. Find it near the University Road shops."
+    },
+    {
+        id: 6,
+        name: 'CITTIC',
+        lat: 10.0435,
+        lng: 76.3242,
+        code: DUMMY_CODE,
+        question: "CITTIC is the center for?",
+        answer: "Innovation",
+        options: ["Innovation", "Administration", "Recreation", "Examination"],
+        clue: "Where ideas are born and startups rise. Located near the Guest House."
     },
 ];

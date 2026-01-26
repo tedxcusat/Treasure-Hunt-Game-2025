@@ -6,14 +6,35 @@ export async function POST(req: Request) {
     try {
         const formData = await req.formData();
         const image = formData.get('image');
-        const zoneId = formData.get('zoneId');
         const teamId = formData.get('teamId');
 
-        if (!image || !zoneId || !teamId) {
-            return NextResponse.json({ error: 'Missing image, zoneId, or teamId' }, { status: 400 });
+        if (!image || !teamId) {
+            return NextResponse.json({ error: 'Missing image or teamId' }, { status: 400 });
         }
 
-        // 1. External Verification
+        // 1. Fetch Team State - Get the zone assigned to this team from database
+        const { data: team, error: teamError } = await supabase
+            .from('teams')
+            .select('current_zone, remaining_zones')
+            .eq('id', teamId)
+            .single();
+
+        if (teamError || !team) {
+            return NextResponse.json({ error: 'Team not found in Game DB' }, { status: 404 });
+        }
+
+        // 2. Determine zone_id from team's current_zone (assigned by workflow)
+        const zoneId = team.current_zone;
+
+        if (!zoneId) {
+            return NextResponse.json({ 
+                success: false, 
+                message: 'No zone assigned to team. Game may be completed.' 
+            }, { status: 400 });
+        }
+
+        // 3. External Verification - Use team's current_zone from database
+        // The workflow assigns zones to teams, and we verify against that assigned zone
         const externalUrl = `https://tinkerhub--treasure-hunt-zones-fastapi-app.modal.run/verify/zone_${zoneId}`;
         console.log(`Verifying Zone ${zoneId} for Team ${teamId} at ${externalUrl}...`);
 
@@ -36,17 +57,8 @@ export async function POST(req: Request) {
         const data = await backendRes.json();
         console.log('Verification Result:', data);
 
-        // 2. Game Progression Logic (Supabase)
+        // 4. Game Progression Logic (Supabase)
         // If verification was successful (assume backend returns success or 200 OK means success)
-
-        // Fetch Team State
-        const { data: team, error: teamError } = await supabase
-            .from('teams')
-            .select('current_zone, remaining_zones')
-            .eq('id', teamId)
-            .single();
-
-        if (teamError || !team) throw new Error('Team not found in Game DB');
 
         let updates: any = {};
         let nextZoneId = null;

@@ -131,9 +131,8 @@ export default function GamePage() {
 
             const formData = new FormData();
             formData.append('image', file);
-            formData.append('zoneId', currentZone.id.toString());
-            // Added teamId to request as per user requirement
             formData.append('teamId', teamId);
+            // Note: zoneId is NOT sent by client - server determines zone from team's database record
 
             // Call Proxy API
             const verifyRes = await fetch('/api/verify-image', {

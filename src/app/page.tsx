@@ -80,6 +80,31 @@ export default function Home() {
       return;
     }
 
+    // 3. Reactivate User on Login (if they quit previously)
+    let updateColumn = null;
+    if (team.leader_verified_code === enteredCode) updateColumn = 'leader_is_active';
+    else if (team.member1_verified_code === enteredCode) updateColumn = 'member1_is_active';
+    else if (team.member2_verified_code === enteredCode) updateColumn = 'member2_is_active';
+    else if (team.member3_verified_code === enteredCode) updateColumn = 'member3_is_active';
+    else if (team.member4_verified_code === enteredCode) updateColumn = 'member4_is_active';
+
+    if (updateColumn) {
+      // Reactivate the user and clear game_end_time if game wasn't actually completed
+      // (game_end_time might have been set when all members quit, but game isn't finished)
+      const updates: any = { [updateColumn]: true };
+      
+      // If game_end_time is set but there are still remaining zones, clear it
+      // This allows teams to resume after quitting
+      if (team.game_end_time && team.remaining_zones && team.remaining_zones.length > 0) {
+        updates.game_end_time = null;
+      }
+      
+      await supabase
+        .from('teams')
+        .update(updates)
+        .eq('id', team.id);
+    }
+
     // Success - Use 'team' object directly
     const data = team;
 
