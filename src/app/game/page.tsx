@@ -812,11 +812,18 @@ export default function GamePage() {
             </div>
 
             {/* Main View Area */}
+            {/* Main View Area */}
             <div className="absolute inset-0 z-0">
-                {viewMode === 'MAP' ? (
+                {/* MAP LAYER - Keep mounted for performance */}
+                <div className={`absolute inset-0 transition-opacity duration-500 ${viewMode === 'MAP' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                     <GameMap targetLocation={currentZone} userLoc={userLoc} />
-                ) : (
-                    <ARView targetLocation={currentZone} modelUrl="" onModelClick={handleModelClick} />
+                </div>
+
+                {/* AR LAYER - Mount/Unmount to manage Camera Resource */}
+                {viewMode === 'AR' && (
+                    <div className="absolute inset-0 z-20">
+                        <ARView targetLocation={currentZone} modelUrl="" onModelClick={handleModelClick} />
+                    </div>
                 )}
             </div>
 

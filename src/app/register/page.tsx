@@ -226,7 +226,14 @@ export default function Register() {
                         disabled={loading}
                         className="w-full bg-mission-red text-white h-16 rounded-full font-black font-orbitron text-xl uppercase tracking-widest hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-500/20 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
                     >
-                        {loading ? 'REGISTERING...' : <>CONFIRM SQUAD <ArrowRight className="w-6 h-6 stroke-[2.5]" /></>}
+                        {loading ? (
+                            <div className="flex items-center gap-2 animate-pulse">
+                                <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                                <span className="text-sm">TRANSMITTING...</span>
+                            </div>
+                        ) : (
+                            <>CONFIRM SQUAD <ArrowRight className="w-6 h-6 stroke-[2.5]" /></>
+                        )}
                     </button>
                 </div>
             </div>
