@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw, BookOpen, RefreshCcw, Crosshair, AlertTriangle } from 'lucide-react';
+import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw, BookOpen, RefreshCcw, Crosshair, AlertTriangle, Zap, ZapOff } from 'lucide-react';
 import { STORY_PAGES } from '@/lib/storyData';
 
 // Dynamically import Map to prevent SSR issues with Leaflet
@@ -108,6 +108,38 @@ export default function GamePage() {
             setCapturedImage(canvas.toDataURL('image/png'));
         } else {
             showToast('CAMERA SYSTEM OBSCURED', 'error');
+        }
+    };
+
+    // Flash/Torch Logic
+    const [isFlashOn, setIsFlashOn] = useState(false);
+
+    const toggleFlash = async () => {
+        const video = document.querySelector('video') as HTMLVideoElement;
+        if (video && video.srcObject) {
+            const stream = video.srcObject as MediaStream;
+            const track = stream.getVideoTracks()[0];
+
+            // Note: 'torch' is not standard in all TS definitions yet, casting to any
+            const capabilities = track.getCapabilities() as any;
+
+            if (!capabilities.torch) {
+                showToast('FLASH SYSTEM OFFLINE', 'error');
+                return;
+            }
+
+            try {
+                await track.applyConstraints({
+                    advanced: [{ torch: !isFlashOn } as any]
+                });
+                setIsFlashOn(!isFlashOn);
+                playSound(isFlashOn ? 'click' : 'scope'); // Sound feedback
+            } catch (err) {
+                console.error("Flash Error:", err);
+                showToast('FLASH MALFUNCTION', 'error');
+            }
+        } else {
+            showToast('CAMERA NOT INITIALIZED', 'error');
         }
     };
 
@@ -715,7 +747,6 @@ export default function GamePage() {
                 <AnimatePresence>
                     {viewMode === 'AR' && (
                         <>
-                            {/* TOP LEFT CLOSE BUTTON */}
                             <motion.button
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -724,6 +755,20 @@ export default function GamePage() {
                                 className="absolute top-24 left-6 pointer-events-auto z-[70] w-12 h-12 bg-black/60 backdrop-blur-md rounded-full border border-white/20 flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
                             >
                                 <X className="w-6 h-6" />
+                            </motion.button>
+
+                            {/* TOP RIGHT FLASH BUTTON */}
+                            <motion.button
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                onClick={toggleFlash}
+                                className={`absolute top-24 right-6 pointer-events-auto z-[70] w-12 h-12 backdrop-blur-md rounded-full border flex items-center justify-center shadow-lg active:scale-90 transition-all ${isFlashOn
+                                    ? 'bg-yellow-500/80 border-yellow-300 text-black shadow-[0_0_15px_rgba(234,179,8,0.5)]'
+                                    : 'bg-black/60 border-white/20 text-white'
+                                    }`}
+                            >
+                                {isFlashOn ? <Zap className="w-6 h-6 Fill-Current" /> : <ZapOff className="w-6 h-6" />}
                             </motion.button>
 
                             {/* CENTER RETICLE */}
