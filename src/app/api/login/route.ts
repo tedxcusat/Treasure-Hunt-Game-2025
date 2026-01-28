@@ -55,8 +55,18 @@ export async function POST(request: Request) {
             updateColumn = 'member4_is_active';
         }
 
+        const updates: any = {};
         if (updateColumn) {
-            await supabase.from('teams').update({ [updateColumn]: true }).eq('id', team.id);
+            updates[updateColumn] = true;
+        }
+
+        // Start Game Timer if not already started
+        if (!team.game_start_time) {
+            updates.game_start_time = new Date().toISOString();
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await supabase.from('teams').update(updates).eq('id', team.id);
         }
 
         return NextResponse.json({

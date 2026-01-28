@@ -89,7 +89,7 @@ export async function POST(req: Request) {
             leader_name: leaderName,
             leader_email: email,
             leader_verified_code: leaderCode,
-            leader_is_active: true,
+            leader_is_active: false, // Wait for login to activate
 
             // Members Emails & Codes
             member1_email: members[0] || 'N/A',
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
             current_zone: startZone,
             remaining_zones: remainingZones,
 
-            game_start_time: new Date().toISOString(),
+            game_start_time: null, // Timer starts on first login
             unlocked_clues_count: 0 // Initialize clue counter
         };
 
