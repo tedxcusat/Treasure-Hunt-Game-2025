@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Map as MapIcon, Target, Power, FileText, X, HelpCircle, CheckCircle, Download, RefreshCw, BookOpen, RefreshCcw, Crosshair, AlertTriangle, Zap, ZapOff } from 'lucide-react';
+import { MapPin, Camera, X, RefreshCcw, CheckCircle, Crosshair, Zap, ZapOff, Check, AlertTriangle, Info, Power, Target, ArrowRight, BookOpen, FileText } from 'lucide-react';
 import { STORY_PAGES } from '@/lib/storyData';
 
 // Dynamically import Map to prevent SSR issues with Leaflet
@@ -114,6 +114,10 @@ export default function GamePage() {
     // Flash/Torch Logic
     const [isFlashOn, setIsFlashOn] = useState(false);
 
+    // Success Animation Logic
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [nextZoneName, setNextZoneName] = useState(''); // To display "NEXT TARGET: X"
+
     const toggleFlash = async () => {
         const video = document.querySelector('video') as HTMLVideoElement;
         if (video && video.srcObject) {
@@ -183,8 +187,9 @@ export default function GamePage() {
                 if (data.completed) {
                     setTimeout(() => router.push('/success'), 1000);
                 } else {
-                    // Refresh data for next zone
-                    setTimeout(() => fetchZoneData(teamId), 1000);
+                    // Trigger "Level Up" Animation
+                    setNextZoneName(data.nextZoneName || 'UNKNOWN SECTOR');
+                    setShowSuccessModal(true);
                 }
             } else {
                 showToast("VERIFICATION FAILED: TARGET NOT IDENTIFIED.", 'error');
@@ -890,6 +895,85 @@ export default function GamePage() {
                     </div>
                 </div>
             )}
+
+            {/* ZONE SUCCESS MODAL (LEVEL UP) */}
+            <AnimatePresence>
+                {showSuccessModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center p-8 overflow-hidden"
+                    >
+                        {/* Sci-Fi Grid Background */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(34,197,94,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.1)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+
+                        {/* Animated Icon */}
+                        <div className="relative mb-12">
+                            <div className="absolute inset-0 bg-green-500 blur-3xl opacity-20 animate-pulse"></div>
+                            <motion.div
+                                initial={{ scale: 0, rotate: -180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: "spring", damping: 12, delay: 0.2 }}
+                                className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(34,197,94,0.6)] border-4 border-white relative z-10"
+                            >
+                                <CheckCircle className="w-16 h-16 text-black" strokeWidth={4} />
+                            </motion.div>
+                        </div>
+
+                        {/* Text Content */}
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-4xl font-black text-white font-orbitron text-center mb-4 tracking-tighter"
+                        >
+                            ZONE CLEARED
+                        </motion.h2>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6 }}
+                            className="text-green-500 font-mono text-sm tracking-[0.3em] mb-12 uppercase flex items-center gap-2"
+                        >
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            UPLINK ESTABLISHED
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.9 }}
+                            className="w-full max-w-sm bg-gray-900/80 backdrop-blur border border-white/10 rounded-2xl p-8 text-center mb-12 relative overflow-hidden group"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent animate-[scan_2s_linear_infinite]" />
+                            <p className="text-gray-400 text-xs font-bold uppercase mb-4 tracking-widest">NEXT TARGET COORDINATES</p>
+                            <h3 className="text-3xl font-black text-white font-orbitron tracking-widest leading-tight">
+                                {nextZoneName || "DECRYPTING..."}
+                            </h3>
+                        </motion.div>
+
+                        {/* Action Button */}
+                        <motion.button
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.4 }}
+                            onClick={() => {
+                                playSound('click');
+                                setShowSuccessModal(false);
+                                // Trigger transition
+                                if (teamId) fetchZoneData(teamId);
+                            }}
+                            className="w-full max-w-xs h-16 bg-white text-black font-black text-xl rounded-full uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:bg-gray-200 active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
+                        >
+                            <span className="relative z-10 flex items-center gap-3">INITIATE <ArrowRight className="w-6 h-6 stroke-[3]" /></span>
+                            <div className="absolute inset-0 bg-gray-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                        </motion.button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
 
 
 

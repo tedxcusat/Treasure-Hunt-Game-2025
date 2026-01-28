@@ -22,11 +22,15 @@ const LongArrowLeft = ({ className }: { className?: string }) => (
 const SwipeButton = ({ onComplete }: { onComplete: () => void }) => {
     const [dragged, setDragged] = useState(false);
     const x = useMotionValue(0);
+    const backgroundOpacity = useTransform(x, [0, 150], [1, 0.2]);
+    const textOpacity = useTransform(x, [0, 100], [1, 0]);
+    const scale = useTransform(x, [0, 150], [1, 1.1]);
     const controls = useAnimation();
 
     const handleDragEnd = async (_: any, info: any) => {
         if (info.offset.x > 150) {
             setDragged(true);
+            controls.start({ x: 200, opacity: 0 }); // drag off
             onComplete();
         } else {
             controls.start({ x: 0 });
@@ -34,20 +38,39 @@ const SwipeButton = ({ onComplete }: { onComplete: () => void }) => {
     };
 
     return (
-        <div className="relative w-full h-16 bg-[#FFC0CB] rounded-full flex items-center p-1.5 border-[4px] border-[#4A0404] overflow-hidden">
-            <motion.div className="absolute inset-0 flex items-center justify-center text-black font-bold tracking-widest text-sm font-clash uppercase pointer-events-none z-0 pl-8">
-                SWIPE TO START GAME
+        <div className="relative w-full h-16 bg-black/5 rounded-full flex items-center p-1.5 border border-black/10 shadow-inner overflow-hidden group">
+            {/* Progress Track Background */}
+            <motion.div
+                style={{ opacity: backgroundOpacity }}
+                className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent"
+            />
+
+            {/* Shimmering Text */}
+            <motion.div
+                style={{ opacity: textOpacity }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-0"
+            >
+                <span className="text-black/40 font-bold tracking-[0.2em] text-xs font-orbitron uppercase animate-pulse">
+                    Swipe to Initialize
+                </span>
+                <ChevronRight className="w-4 h-4 text-black/20 ml-2 animate-[moveRight_1.5s_infinite]" />
             </motion.div>
+
+            {/* Draggable Handle */}
             <motion.div
                 drag="x"
                 dragConstraints={{ left: 0, right: 200 }}
-                dragElastic={0.1}
+                dragElastic={0.05} // Stiffer feel
                 dragMomentum={false}
                 onDragEnd={handleDragEnd}
                 animate={controls}
-                className="w-12 h-12 bg-[#D00000] rounded-full flex items-center justify-center z-10 cursor-grab active:cursor-grabbing shadow-sm"
+                style={{ scale }}
+                whileTap={{ cursor: "grabbing", scale: 0.95 }}
+                className="w-12 h-12 bg-mission-red rounded-full flex items-center justify-center z-10 cursor-grab shadow-[0_0_15px_rgba(220,38,38,0.4)] active:shadow-[0_0_25px_rgba(220,38,38,0.6)] transition-shadow border border-white/20 relative"
             >
-                <ArrowRight className="w-6 h-6 text-white stroke-[2.5]" />
+                {/* Glow effect inside button */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-full" />
+                <ArrowRight className="w-5 h-5 text-white stroke-[3]" />
             </motion.div>
         </div>
     );

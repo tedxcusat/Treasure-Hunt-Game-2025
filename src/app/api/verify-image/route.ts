@@ -27,9 +27,9 @@ export async function POST(req: Request) {
         const zoneId = team.current_zone;
 
         if (!zoneId) {
-            return NextResponse.json({ 
-                success: false, 
-                message: 'No zone assigned to team. Game may be completed.' 
+            return NextResponse.json({
+                success: false,
+                message: 'No zone assigned to team. Game may be completed.'
             }, { status: 400 });
         }
 
@@ -61,8 +61,8 @@ export async function POST(req: Request) {
         // Response structure: { status: "same" | "different", zone_id, identified_object, confidence_score }
         if (data.status !== 'same') {
             console.log(`Verification failed: status=${data.status}, confidence=${data.confidence_score}`);
-            return NextResponse.json({ 
-                success: false, 
+            return NextResponse.json({
+                success: false,
                 message: `Object verification failed. Status: ${data.status || 'unknown'}`,
                 confidence_score: data.confidence_score,
                 identified_object: data.identified_object
@@ -107,12 +107,24 @@ export async function POST(req: Request) {
             is_correct: true
         }]);
 
+        // 7. Get Next Zone Name (for UI Feedback)
+        let nextZoneName = null;
+        if (nextZoneId) {
+            const { data: zData } = await supabase
+                .from('zones')
+                .select('name')
+                .eq('id', nextZoneId)
+                .single();
+            if (zData) nextZoneName = zData.name;
+        }
+
         // Return Combined Result
         return NextResponse.json({
             success: true,
             message: 'Zone Verified',
             completed: !nextZoneId,
             nextZone: nextZoneId,
+            nextZoneName: nextZoneName, // NEW field
             identified_object: data.identified_object,
             confidence_score: data.confidence_score
         });
