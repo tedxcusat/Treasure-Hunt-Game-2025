@@ -91,8 +91,13 @@ export async function GET(request: Request) {
 
 
         if (zoneError || !zone) {
-            // If no zone found, maybe game complete?
-            return NextResponse.json({ completed: true });
+            // FIX: Do not auto-complete if zone is missing but game is not marked finished.
+            // This prevents "Login -> Success" bug if current_zone is null/invalid.
+            console.error(`Zone Lookup Failed for ID: ${actualZoneId}`, zoneError);
+            return NextResponse.json({
+                error: 'Zone data not found. Contact Control.',
+                completed: false
+            });
         }
 
         // Sanitized Zone Data
