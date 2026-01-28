@@ -121,17 +121,14 @@ export default function SuccessPage() {
                             transition={{ delay: 0.5 }}
                             className="w-full max-w-sm bg-gray-900 border border-green-500/30 rounded-lg p-6 relative group"
                         >
-                            <div className="absolute -top-3 left-4 bg-black px-2 text-green-500 text-xs font-bold border border-green-500/30 uppercase">
-                                Classified Report
-                            </div>
 
                             <div className="flex justify-between items-end mb-6 border-b border-green-500/20 pb-4">
                                 <div>
-                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Total Duration</div>
+                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Finish Time</div>
                                     <div className="text-3xl font-black text-white font-mono">{stats?.totalTime}</div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Global Standing</div>
+                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Standing</div>
                                     <div className="text-3xl font-black text-yellow-400 font-orbitron">#{stats?.rank}</div>
                                 </div>
                             </div>
@@ -141,7 +138,7 @@ export default function SuccessPage() {
                                 className="w-full bg-green-600/10 border border-green-500/50 text-green-500 h-14 rounded font-bold uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-3 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
                             >
                                 <ListOrdered className="w-4 h-4" />
-                                Access Global Database
+                                Access Leaderboard
                             </button>
                         </motion.div>
 

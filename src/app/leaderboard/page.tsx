@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trophy, Loader2 } from 'lucide-react';
+import { Trophy, Loader2, Target, Shield, Crosshair, Medal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TeamRank {
     name: string;
@@ -26,7 +27,7 @@ export default function LeaderboardPage() {
         try {
             const myTeamId = localStorage.getItem('teamId');
 
-            // Fetch all COMPLETED teams, ordered by game_end_time (asc)
+            // Fetch all COMPLETED teams
             const { data, error } = await supabase
                 .from('teams')
                 .select('id, team_name, game_start_time, game_end_time')
@@ -37,14 +38,10 @@ export default function LeaderboardPage() {
 
             console.log('Raw Leaderboard Data:', data);
 
-            // Process rankings
-            // Sorting Logic: Lowest Duration (game_end_time - game_start_time)
-
             const processed = (data || []).map((team) => {
                 const start = new Date(team.game_start_time).getTime();
                 const end = new Date(team.game_end_time).getTime();
                 const durationMs = end - start;
-
                 return {
                     id: team.id,
                     name: team.team_name,
@@ -84,76 +81,107 @@ export default function LeaderboardPage() {
     };
 
     return (
-        <div className="relative h-full min-h-screen bg-white text-black font-sans p-6">
-            {/* Background Grid */}
-            <div className="bg-grid absolute inset-0 z-0 pointer-events-none opacity-50" />
+        <div className="min-h-screen bg-black text-white font-mono overflow-hidden relative p-6">
+            {/* CRT Scanline Effect */}
+            <div className="absolute inset-0 z-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] opacity-20" />
 
-            <div className="relative z-10 max-w-md mx-auto">
+            {/* Background Grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(34,197,94,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-0" />
+
+            <div className="relative z-10 max-w-md mx-auto pb-12">
 
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
+                <motion.div
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="mb-8 text-center"
+                >
+                    <h1 className="text-3xl font-black uppercase font-orbitron tracking-tighter text-white glow-text">
+                        GLOBAL<br /><span className="text-green-500">INTELLIGENCE</span>
+                    </h1>
+                </motion.div>
 
-                    <h1 className="text-xl font-black uppercase tracking-wider">Live Standings</h1>
-                </div>
-
-                {/* Current User Rank Banner */}
-                {myRank ? (
-                    <div className="bg-mission-red text-white p-4 rounded-xl shadow-lg shadow-red-500/20 mb-8 flex items-center justify-between animate-in slide-in-from-top-4 fade-in duration-500">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 p-2 rounded-lg">
-                                <Trophy className="w-5 h-5 text-white" />
+                {/* My Rank Card */}
+                <AnimatePresence>
+                    {myRank && (
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-green-900/20 border border-green-500 rounded-lg p-5 mb-8 relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-2 opacity-20"><Target className="w-12 h-12 text-green-500" /></div>
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <div className="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1">Your Unit Status</div>
+                                    <div className="text-xl font-bold uppercase text-white truncate max-w-[150px]">{myRank.name}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-3xl font-black font-orbitron text-green-400">#{myRank.rank}</div>
+                                    <div className="text-xs font-mono text-green-500/80">{myRank.time} HRS</div>
+                                </div>
                             </div>
-                            <div>
-                                <div className="text-xs font-bold opacity-80 uppercase">Your Rank</div>
-                                <div className="font-black text-lg max-w-[150px] truncate">{myRank.name}</div>
-                            </div>
-                        </div>
-                        <div className="text-3xl font-black">#{myRank.rank}</div>
-                    </div>
-                ) : (
-                    !loading && (
-                        <div className="bg-gray-100 text-gray-400 p-4 rounded-xl mb-8 text-center text-xs font-bold uppercase tracking-widest border border-gray-200 border-dashed">
-                            Mission Not Completed Yet
-                        </div>
-                    )
-                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                {/* Table */}
-                <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm min-h-[300px]">
+                {/* Rankings List */}
+                <div className="space-y-3">
                     {loading ? (
-                        <div className="flex items-center justify-center h-48 flex-col gap-3 text-gray-400">
-                            <Loader2 className="w-6 h-6 animate-spin" />
-                            <span className="text-xs font-mono uppercase">Syncing Leaderboard...</span>
+                        <div className="flex flex-col items-center justify-center h-64 gap-4 text-green-500/50">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                            <span className="text-xs font-mono tracking-widest animate-pulse">DECRYPTING DATABASE...</span>
                         </div>
                     ) : leaderboard.length === 0 ? (
-                        <div className="flex items-center justify-center h-48 flex-col gap-3 text-gray-400 text-center p-6">
-                            <Trophy className="w-8 h-8 opacity-20" />
-                            <span className="text-xs font-mono uppercase">No completions yet.<br />Be the first!</span>
+                        <div className="text-center py-12 border border-dashed border-gray-800 rounded-xl bg-gray-900/50">
+                            <Shield className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                            <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">No Missions Completed</p>
                         </div>
                     ) : (
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-gray-50 border-b-2 border-gray-100">
-                                    <th className="py-4 px-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Rank</th>
-                                    <th className="py-4 px-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Squad</th>
-                                    <th className="py-4 px-4 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Time</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {leaderboard.map((row, idx) => (
-                                    <tr key={idx} className={row.isCurrentUser ? 'bg-red-50' : idx === 0 ? 'bg-yellow-50/50' : ''}>
-                                        <td className="py-4 px-4 text-sm font-black text-gray-800">
-                                            {idx === 0 ? <Trophy className="w-4 h-4 text-yellow-500 inline mr-1" /> : `#${row.rank}`}
-                                        </td>
-                                        <td className={`py-4 px-4 text-sm font-bold ${row.isCurrentUser ? 'text-mission-red' : 'text-gray-800'}`}>
-                                            {row.name} {row.isCurrentUser && '(YOU)'}
-                                        </td>
-                                        <td className="py-4 px-4 text-right text-sm font-mono font-medium text-gray-500 bg-gray-50/50">{row.time}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        leaderboard.map((team, idx) => (
+                            <motion.div
+                                key={team.name}
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 0.3 + (idx * 0.1) }}
+                                className={`
+                                    relative flex items-center justify-between p-4 rounded border 
+                                    ${team.isCurrentUser
+                                        ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                                        : 'bg-black/40 border-gray-800'
+                                    }
+                                `}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`
+                                        w-8 h-8 flex items-center justify-center font-black rounded font-orbitron text-sm
+                                        ${idx === 0 ? 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/50' :
+                                            idx === 1 ? 'text-gray-300 bg-gray-300/10 border border-gray-300/50' :
+                                                idx === 2 ? 'text-orange-400 bg-orange-400/10 border border-orange-400/50' :
+                                                    'text-gray-600 border border-gray-800'}
+                                    `}>
+                                        {idx < 3 ? <Medal className="w-4 h-4" /> : `#${team.rank}`}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className={`text-sm font-bold uppercase tracking-wide ${team.isCurrentUser ? 'text-white' : 'text-gray-400'}`}>
+                                            {team.name}
+                                        </span>
+                                        {team.isCurrentUser && <span className="text-[9px] text-green-500 font-bold uppercase tracking-wider">You</span>}
+                                    </div>
+                                </div>
+
+                                <div className="font-mono text-sm font-medium text-gray-500">
+                                    {team.time}
+                                </div>
+                            </motion.div>
+                        ))
                     )}
+                </div>
+
+                {/* Footer Decor */}
+                <div className="mt-12 text-center opacity-30">
+                    <Crosshair className="w-6 h-6 mx-auto text-green-500 mb-2" />
+                    <p className="text-[8px] uppercase tracking-[0.5em] text-green-500">Secure Connection Verified</p>
                 </div>
 
             </div>
