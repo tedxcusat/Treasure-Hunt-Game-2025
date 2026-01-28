@@ -446,7 +446,7 @@ export default function GamePage() {
 
     if (loadingZone || !currentZone) {
         return (
-            <div className="h-full w-full bg-black flex items-center justify-center flex-col gap-4">
+            <div className="absolute inset-0 z-[100] h-[100dvh] w-full bg-black flex items-center justify-center flex-col gap-4">
                 <div className="w-16 h-16 border-4 border-mission-red border-t-transparent rounded-full animate-spin" />
                 <p className="text-mission-red font-mono animate-pulse">ESTABLISHING SECURE UPLINK...</p>
             </div>
@@ -611,21 +611,11 @@ export default function GamePage() {
                                     className="flex flex-col items-center gap-2 mr-4 mb-4"
                                 >
                                     <motion.button
-                                        onClick={async () => {
+                                        onClick={() => {
                                             playSound('click');
-                                            // iOS Safari requires a direct user interaction to prompt for camera.
-                                            // We request it here to "prime" the permission, then IMMEDIATELY RELEASE it
-                                            // so AR.js can claim the hardware without "Device Busy" errors.
-                                            try {
-                                                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                                                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                                                    // Critical: Stop the stream immediately to free hardware for AR.js
-                                                    stream.getTracks().forEach(track => track.stop());
-                                                }
-                                            } catch (err) {
-                                                console.warn("Camera permission pre-check failed:", err);
-                                            }
-                                            setViewMode('AR');
+                                            // Simply switch mode. AR.js will handle permissions.
+                                            // Adding a tiny delay to ensure UI updates before heavy AR initialization
+                                            setTimeout(() => setViewMode('AR'), 50);
                                         }}
                                         whileHover="hover"
                                         whileTap="tap"

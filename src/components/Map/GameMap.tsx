@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface GameMapProps {
-    targetLocation?: { lat: number; lng: number };
+    targetLocation?: { lat: number; lng: number; name?: string };
     userLoc: { lat: number; lng: number } | null;
 }
 
@@ -350,8 +350,8 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
             </svg>
 
             <!-- Center Target Label -->
-            <div class="absolute -top-6 bg-black/90 backdrop-blur border border-red-500/80 px-2 py-0.5 rounded text-[10px] text-red-500 font-mono font-bold tracking-widest shadow-[0_0_15px_rgba(255,0,0,0.6)] z-20">
-                TARGET_ZONE
+            <div class="absolute -top-6 bg-black/90 backdrop-blur border border-red-500/80 px-2 py-0.5 rounded text-[10px] text-red-500 font-mono font-bold tracking-widest shadow-[0_0_15px_rgba(255,0,0,0.6)] z-20 whitespace-nowrap">
+                ${targetLocation?.name || 'TARGET'}
             </div>
 
             <!-- Core Dot -->
@@ -360,7 +360,7 @@ export default function GameMap({ targetLocation, userLoc }: GameMapProps) {
            </div>`,
         iconSize: [160, 160],
         iconAnchor: [80, 80]
-    }), []); // Empty dependency array as it's static HTML
+    }), [targetLocation?.name]); // Re-create icon if name changes
 
     if (!userLoc) return <div className="flex h-full items-center justify-center text-mission-red animate-pulse">ACQUIRING GPS SIGNAL...</div>;
 

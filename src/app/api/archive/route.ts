@@ -4,6 +4,8 @@ import { CLUE_IMAGES, getClueImagePath } from '@/lib/clueLoader';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 // Server-side function to read clue text files
 // Note: story_clues folder should be in project root for server-side access
 function readClueText(clueNumber: number): string | null {

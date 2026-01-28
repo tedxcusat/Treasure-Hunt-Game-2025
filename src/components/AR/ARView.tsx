@@ -214,10 +214,10 @@ function ARView({ targetLocation, modelUrl, onModelClick }: ARViewProps) {
                                 alert("Camera blocked: " + e.message + ". Check Site Settings.");
                             });
                     }}
-                    className="pointer-events-auto bg-mission-red text-white px-6 py-4 rounded-xl font-black tracking-widest uppercase shadow-2xl animate-in fade-in fill-mode-forwards opacity-0 duration-1000 delay-[4000ms]"
-                    style={{ animationDelay: '4s' }}
+                    className="pointer-events-auto bg-mission-red/90 backdrop-blur text-white px-6 py-4 rounded-xl font-black tracking-widest uppercase shadow-2xl animate-in fade-in fill-mode-forwards opacity-0 duration-1000 delay-[3000ms] border border-white/20 hover:bg-red-600 transition-colors"
+                    style={{ animationDelay: '3s' }}
                 >
-                    Enable Camera
+                    CAMERA STUCK? TAP TO RELOAD
                 </button>
             </div>
         </div>

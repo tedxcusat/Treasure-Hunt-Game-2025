@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { MOCK_ZONES, DUMMY_CODE } from '@/lib/mockData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Helper: Haversine Distance (Meters)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371e3; // Earth radius in meters
