@@ -21,7 +21,7 @@ export async function loadClue(clueNumber: number): Promise<ClueData | null> {
         // We'll need to know which images exist - for now, we'll try common patterns
         // In production, you might want to maintain a manifest file
         const images: string[] = [];
-        
+
         // Try to detect images - this is a simple approach
         // You might want to create a manifest.json in each clue folder
         const possibleImages = [
@@ -52,10 +52,10 @@ export function getClueImagePath(clueNumber: number, imageName: string): string 
 
 // Predefined image lists for each clue (based on folder structure)
 export const CLUE_IMAGES: Record<number, string[]> = {
-    1: ['WIN_20250910_20_56_21_Pro.jpg'],
-    2: [], // No images
-    3: ['WIN_20250910_20_56_21_Pro copy 2.jpg'],
-    4: [], // No images
-    5: ['WIN_20250910_20_56_21_Pro copy.jpg', 'WIN_20250910_20_56_21_Pro copy 3.jpg'],
-    6: [], // No images
+    1: ['clue_1-1.jpg'],
+    2: ['clue_2-2.jpg'],
+    3: [], // No images found in directory
+    4: ['clue_4-1.jpg', 'clue_4-2.jpg'],
+    5: ['clue_5-1.jpg', 'clue_5-2.jpg', 'clue_5-3.jpg', 'clue_5-4.jpg'],
+    6: ['clue_6-1.jpg', 'clue_6-2.jpg', 'clue_6-3.jpg']
 };
