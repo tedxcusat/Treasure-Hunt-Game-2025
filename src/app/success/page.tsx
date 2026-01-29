@@ -213,6 +213,15 @@ export default function SuccessPage() {
                                 </div>
                             </button>
 
+                            {/* Archive Access Button */}
+                            <button
+                                onClick={() => router.push('/archive')}
+                                className="w-full h-12 mt-4 border border-gray-700 rounded-sm font-mono text-xs text-gray-500 uppercase tracking-widest hover:border-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <FileText className="w-4 h-4" />
+                                ACCESS MISSION ARCHIVE
+                            </button>
+
                             <div className="mt-8 text-center">
                                 <p className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">
                                     SECURE UPLINK ESTABLISHED<br />
