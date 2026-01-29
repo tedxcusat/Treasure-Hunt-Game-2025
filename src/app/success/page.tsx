@@ -161,11 +161,11 @@ export default function SuccessPage() {
                                     <div className="absolute inset-0 bg-red-500/20 animate-pulse" />
                                     <Lock className="w-8 h-8 text-red-500 relative z-10" />
                                 </div>
-                                <h2 className="text-red-500 font-bold tracking-[0.5em] text-xs uppercase mb-2">
-                                    FINAL SECURITY LAYER
+                                <h2 className="text-red-500 font-bold tracking-[0.2em] text-[10px] uppercase mb-4 leading-relaxed max-w-xs mx-auto">
+                                    DO WHATEVER YOU HAVE TO DO TO PREVENT THE DISASTER.
                                 </h2>
-                                <h1 className="text-3xl font-black text-white font-orbitron uppercase tracking-widest">
-                                    ENTER KEY
+                                <h1 className="text-xl font-bold text-white font-orbitron uppercase tracking-widest leading-tight">
+                                    YOUR CODE AWAITS<br />AT THE END
                                 </h1>
                             </motion.div>
 
