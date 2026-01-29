@@ -5,18 +5,18 @@ export const STORY_PAGES = [
     },
     {
         title: "THE ANOMALY",
-        text: "Decades regarding academic excellence have masked a subtle frequency. A signal hidden in the architecture itself. We call it... The Echo."
+        text: "Something in this timeline is out of place.Events are aligning toward a future that should not exist. The disturbance is subtle—but its consequences are not."
     },
     {
         title: "YOUR OBJECTIVE",
-        text: "The Echo has fractured into 6 distinct zones across the campus. Each zone holds a fragment of the code. A piece of the truth."
+        text: "Observe what others overlook. Identify moments where choice still exists. Intervene without revealing what you know."
     },
     {
         title: "THE PROTOCOL",
-        text: "You are tasked to physically locate these anomalies. Trust your scanner. Trust your instincts. The interface will guide you, but your eyes must verify."
+        text: "You are not here to confront - ONLY TO ALTER. Trust your scanner. Trust your instincts. The interface will guide you, but your eyes must verify."
     },
     {
         title: "WARNING",
-        text: "Time is a luxury we do not have. The signal is decaying. You have 30 minutes per sector before the data is lost forever. Stay sharp."
+        text: "Do not rush. Not all truths should be uncovered at once. A single mistake may lock the future into place."
     }
 ];
