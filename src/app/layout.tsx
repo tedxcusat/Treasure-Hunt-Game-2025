@@ -13,7 +13,7 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: 'GeoQuest: Mission Access',
+  title: 'XHUNT: Mission Access',
   description: 'Augmented Reality Treasure Hunt',
 };
 

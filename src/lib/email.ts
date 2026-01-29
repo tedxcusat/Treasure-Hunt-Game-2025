@@ -26,7 +26,7 @@ export const sendTeamCode = async (
   // Send individual emails in parallel
   const emailPromises = validRecipients.map(async (recipient) => {
     const mailOptions = {
-      from: '"GeoQuest Command" <tedcusat@gmail.com>',
+      from: '"XHUNT Command" <tedcusat@gmail.com>',
       to: recipient.email,
       subject: `🔐 ACCESS CODE: ${teamName}`,
       html: `

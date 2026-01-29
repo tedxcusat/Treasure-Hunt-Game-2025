@@ -100,13 +100,13 @@ export default function Home() {
       // Reactivate the user and clear game_end_time if game wasn't actually completed
       // (game_end_time might have been set when all members quit, but game isn't finished)
       const updates: any = { [updateColumn]: true };
-      
+
       // If game_end_time is set but there are still remaining zones, clear it
       // This allows teams to resume after quitting
       if (team.game_end_time && team.remaining_zones && team.remaining_zones.length > 0) {
         updates.game_end_time = null;
       }
-      
+
       await supabase
         .from('teams')
         .update(updates)
@@ -174,19 +174,15 @@ export default function Home() {
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center gap-10">
 
-        {/* Chrome Warning */}
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
-          ⚠️ USE CHROME FOR BEST EXPERIENCE
-        </div>
+
 
         {/* Logo Section */}
         <div className="flex flex-col items-center gap-4">
 
-
           <div className="text-center">
-            <h1 className="text-[2.5rem] font-black tracking-tighter font-orbitron leading-none">
-              <span className="text-black">GEO</span>
-              <span className="text-mission-red">QUEST</span>
+            <h1 className="text-[3.5rem] font-black tracking-tighter font-orbitron leading-none">
+              <span className="text-mission-red">X</span>
+              <span className="text-black">HUNT</span>
             </h1>
             <p className="text-xl font-clash text-black font-medium mt-1 tracking-tight">
               Mission Access
