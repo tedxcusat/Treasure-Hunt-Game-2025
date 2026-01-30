@@ -11,13 +11,6 @@ Turn the campus into a crime scene. Solve clues, track signals, and uncover the 
 -   **Tactical HUD**: specialized interface with Signal Strength, Sonar, and Mission timers.
 -   **Offline capable**: Includes a robust Mock Mode for development and testing without GPS.
 
-## 📍 Missions (Zones)
-1.  **Administrative Office**: The seat of power.
-2.  **University Library**: Where silence speaks volumes.
-3.  **School of Mgmt. Studies**: The training ground.
-4.  **Butterfly Park**: Nature's witness.
-5.  **CITTIC**: Innovation's edge.
-6.  **Amenity Centre**: The gathering point.
 
 ## 🛠 Tech Stack
 -   **Framework**: Next.js 16 (Turbopack)
