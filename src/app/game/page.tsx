@@ -56,6 +56,7 @@ export default function GamePage() {
 
     // Modals
     const [showQuitModal, setShowQuitModal] = useState(false);
+    const [showSkipModal, setShowSkipModal] = useState(false);
     const [showClueModal, setShowClueModal] = useState(false);
 
     // Game Flow State
@@ -526,8 +527,99 @@ export default function GamePage() {
                         >
                             <FileText className="w-5 h-5" />
                         </button>
+
+                        {/* DEBUG SKIP BUTTON */}
+                        <button
+                            onClick={() => {
+                                playSound('click');
+                                setShowSkipModal(true);
+                            }}
+                            className="pointer-events-auto w-12 h-12 rounded-full bg-red-900/80 border border-red-500/50 flex items-center justify-center text-white active:scale-95 transition-transform backdrop-blur-md hover:border-red-400"
+                            title="DEBUG: SKIP ZONE"
+                        >
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
+
+                {/* SKIP CONFIRMATION MODAL */}
+                <AnimatePresence>
+                    {showSkipModal && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 pointer-events-auto"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                className="w-full max-w-sm bg-black border border-red-500/50 rounded-2xl p-6 shadow-[0_0_40px_rgba(220,38,38,0.3)] pointer-events-auto"
+                            >
+                                <div className="flex flex-col items-center gap-4 text-center">
+                                    <div className="w-16 h-16 rounded-full bg-red-900/30 border border-red-500 flex items-center justify-center mb-2">
+                                        <AlertTriangle className="w-8 h-8 text-red-500" />
+                                    </div>
+
+                                    <h2 className="text-2xl font-black text-white uppercase tracking-wider">SKIP ZONE?</h2>
+                                    <p className="text-gray-400 text-sm">
+                                        WARNING: This will bypass the current mission objective.
+                                        Only use for testing purposes.
+                                    </p>
+
+                                    <div className="flex gap-3 w-full mt-4">
+                                        <button
+                                            onClick={() => {
+                                                playSound('click');
+                                                setShowSkipModal(false);
+                                            }}
+                                            className="flex-1 py-3 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 active:scale-95 transition-all"
+                                        >
+                                            CANCEL
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                playSound('click');
+                                                setShowSkipModal(false);
+
+                                                try {
+                                                    if (!teamId) return;
+                                                    showToast("SKIPPING ZONE...", 'success');
+
+                                                    const res = await fetch('/api/skip-zone', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ teamId })
+                                                    });
+                                                    const data = await res.json();
+
+                                                    if (data.success) {
+                                                        playSound('success');
+                                                        if (data.completed) {
+                                                            router.push('/success');
+                                                        } else {
+                                                            setNextZoneName(data.nextZoneName || 'NEXT ZONE');
+                                                            setShowSuccessModal(true);
+                                                        }
+                                                    } else {
+                                                        showToast(data.message || "SKIP FAILED", 'error');
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    showToast("SKIP ERROR", 'error');
+                                                }
+                                            }}
+                                            className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold shadow-[0_0_15px_rgba(220,38,38,0.5)] hover:bg-red-500 active:scale-95 transition-all"
+                                        >
+                                            CONFIRM SKIP
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* GPS WARNING BANNER */}
                 {gpsError && !userLoc && (
